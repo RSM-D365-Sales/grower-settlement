@@ -4,7 +4,7 @@ Web application for produce buyers/packers/shippers managing the full grower lif
 
 📘 Master plan: [Docs/PLAN.md](Docs/PLAN.md) · Decisions log: [Docs/DECISIONS.md](Docs/DECISIONS.md) · Setup: [Docs/SETUP.md](Docs/SETUP.md)
 
-🌐 **Hosted demo:** https://rsm-d365-sales.github.io/grower-settlement/ — mock sign-in, demo data baked in at deploy time (no backend; see decision 0.12). Pushes to `main` redeploy automatically.
+🌐 **Hosted demo:** http://www.rsmd365.com/grower-settlement/ (org custom domain; https://rsm-d365-sales.github.io/grower-settlement/ redirects there) — mock sign-in, demo data baked in at deploy time (no backend; see decision 0.12). Pushes to `main` redeploy automatically.
 
 ## Structure
 
