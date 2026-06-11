@@ -28,7 +28,7 @@ Two registrations, one tenant:
    - App roles (allowed member types: Users/Groups): `Admin`, `Accountant`, `ContractManager`, `ContractApprover`, `ReceivingClerk`, `Viewer` — exact strings, they are validated by `api/src/auth/roles.ts`.
    - Assign users/groups to roles via Enterprise Applications → grower-api → Users and groups.
 2. **SPA registration** (`grower-web`)
-   - Platform: Single-page application. Redirect URIs: `http://localhost:5174/` and `https://<org>.github.io/<repo>/` (add the custom domain later if §10.7 changes).
+   - Platform: Single-page application. Redirect URIs: `http://localhost:5174/` and `https://www.rsmd365.com/grower-settlement/` (the org's Pages custom domain — `rsm-d365-sales.github.io` redirects there; see DECISIONS 0.13).
    - API permissions: delegated permission to `grower-api / access_as_user`; grant admin consent.
 
 Then configure:

@@ -20,6 +20,8 @@ Anything that diverged from or refined `PLAN.md`, per its §9.5. Newest first wi
 
 | 0.12 | **Static data mode for the hosted demo** (`VITE_DATA_MODE=static`): the Pages deploy workflow builds the API package, exports the demo seed to `web/public/demo/*.json` (`api/src/scripts/exportDemoData.ts`), and the SPA serves all panes from those files via `web/src/api/staticClient.ts` — no backend required. Day-window filters anchor to the newest date in the dataset so the demo doesn't go stale. The API deploy workflow is skipped until `AZURE_FUNCTIONAPP_NAME` is set. | Hosting on GitHub Pages without a deployed Functions app would otherwise show API errors on every pane. When the Functions app + Entra are ready, set repo variables `VITE_DATA_MODE=api`, `VITE_API_BASE_URL`, `VITE_AUTH_MODE=entra` (+ client ids) and the SPA reverts to the real API with server-side enforcement — the static client mirrors, but cannot replace, those checks. |
 
+| 0.13 | **Published to `RSM-D365-Sales/grower-settlement` (public repo); Pages serves at the org custom domain** `www.rsmd365.com/grower-settlement/`. This effectively answers §10.7: CORS origin for the future Functions app is `https://www.rsmd365.com`, Entra SPA redirect URI is `https://www.rsmd365.com/grower-settlement/`. `VITE_BASE=/<repo>/` still applies (project site under the domain root). | The org already had a verified Pages custom domain. Note: repo is public — keep client-identifying details out of committed docs. |
+
 ## Open items carried forward
 
 - §10 questions 1–7 in `PLAN.md` remain open (commission cost categories, pool distribution basis, partial-sale policy, single-entity/currency confirmation, pending-invoice posting policy, X++ message processor ownership/date, Pages domain).
