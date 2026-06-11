@@ -41,7 +41,7 @@ const useStyles = makeStyles({
 
 export function Layout() {
   const styles = useStyles();
-  const { user, signOut } = useAuth();
+  const { mode, user, signOut } = useAuth();
   const items = NAV_ITEMS.filter((item) => user && hasAccess(user.roles, item.allowed));
 
   return (
@@ -56,9 +56,11 @@ export function Layout() {
             {role}
           </Badge>
         ))}
-        <Button appearance="transparent" style={{ color: "inherit" }} onClick={signOut}>
-          Sign out
-        </Button>
+        {mode === "entra" && (
+          <Button appearance="transparent" style={{ color: "inherit" }} onClick={signOut}>
+            Sign out
+          </Button>
+        )}
       </header>
       <nav className={styles.nav}>
         {items.map((item) => (

@@ -4,7 +4,7 @@ Web application for produce buyers/packers/shippers managing the full grower lif
 
 📘 Master plan: [Docs/PLAN.md](Docs/PLAN.md) · Decisions log: [Docs/DECISIONS.md](Docs/DECISIONS.md) · Setup: [Docs/SETUP.md](Docs/SETUP.md)
 
-🌐 **Hosted demo:** http://www.rsmd365.com/grower-settlement/ (org custom domain; https://rsm-d365-sales.github.io/grower-settlement/ redirects there) — mock sign-in, demo data baked in at deploy time (no backend; see decision 0.12). Pushes to `main` redeploy automatically.
+🌐 **Hosted demo:** http://www.rsmd365.com/grower-settlement/ (org custom domain; https://rsm-d365-sales.github.io/grower-settlement/ redirects there) — opens straight on the dashboard as an auto-signed-in demo identity, demo data baked in at deploy time (no backend; see decisions 0.12/0.14). Pushes to `main` redeploy automatically.
 
 ## Structure
 
@@ -32,6 +32,6 @@ npm install
 npm run dev          # http://localhost:5174
 ```
 
-Open http://localhost:5174, pick a role on the mock sign-in screen, and the app shows role-appropriate navigation backed by the live API (which enforces roles server-side).
+Open http://localhost:5174 — mock mode auto-signs-in a demo identity (full access) and lands on the dashboard. The API still enforces roles server-side on every request.
 
 To run against real Entra ID / D365, see [Docs/SETUP.md](Docs/SETUP.md).

@@ -22,6 +22,8 @@ Anything that diverged from or refined `PLAN.md`, per its §9.5. Newest first wi
 
 | 0.13 | **Published to `RSM-D365-Sales/grower-settlement` (public repo); Pages serves at the org custom domain** `www.rsmd365.com/grower-settlement/`. This effectively answers §10.7: CORS origin for the future Functions app is `https://www.rsmd365.com`, Entra SPA redirect URI is `https://www.rsmd365.com/grower-settlement/`. `VITE_BASE=/<repo>/` still applies (project site under the domain root). | The org already had a verified Pages custom domain. Note: repo is public — keep client-identifying details out of committed docs. |
 
+| 0.14 | **Login screen removed in mock mode** (2026-06-11, product owner request): `MockAuthProvider` auto-signs-in a fixed demo identity (`Demo User`, role `Admin`) and the app opens straight on the dashboard; sign-out is hidden. The former role-picker sign-in is gone — to demo role gating, change `DEMO_USER.roles` in `web/src/auth/MockAuthProvider.tsx`. Entra mode (`VITE_AUTH_MODE=entra`) still shows the Microsoft sign-in and is unaffected; restore real login by setting the Entra repo variables once a D365/Entra environment exists. | Demo convenience until the D365 environment is linked. Server-side role enforcement in the API is unchanged. |
+
 ## Open items carried forward
 
 - §10 questions 1–7 in `PLAN.md` remain open (commission cost categories, pool distribution basis, partial-sale policy, single-entity/currency confirmation, pending-invoice posting policy, X++ message processor ownership/date, Pages domain).
