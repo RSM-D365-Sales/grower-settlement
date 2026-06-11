@@ -20,4 +20,9 @@ export const useTableStyles = makeStyles({
   },
   num: { textAlign: "right" },
   muted: { color: tokens.colorNeutralForeground3 },
+  link: {
+    color: tokens.colorBrandForegroundLink,
+    textDecorationLine: "none",
+    ":hover": { textDecorationLine: "underline" },
+  },
 });

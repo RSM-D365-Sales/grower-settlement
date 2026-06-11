@@ -1,32 +1,10 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link as RouterLink } from "react-router-dom";
 import { Badge, Input, Text, Title2 } from "@fluentui/react-components";
 import { useApi } from "../api/client";
+import { Contract } from "../api/types";
 import { useTableStyles } from "../components/tableStyles";
-
-interface ContractLine {
-  lineNumber: number;
-  scope: "Item" | "Commodity" | "AllItems";
-  itemNumber?: string;
-  itemName?: string;
-  commodityCode?: string;
-  commodityName?: string;
-  uom: string;
-  ratePerUnit?: number;
-  commissionPercent?: number;
-}
-
-interface Contract {
-  contractNumber: string;
-  vendorAccount: string;
-  vendorName: string;
-  seasonCode: string;
-  validFrom: string;
-  validTo: string;
-  settlementType: "TradeAgreement" | "SalesCommission";
-  status: string;
-  lines: ContractLine[];
-}
 
 function scopeSummary(c: Contract): string {
   const first = c.lines[0];
@@ -68,7 +46,8 @@ export function ContractsPage() {
       <Title2>Contracts</Title2>
       <Text block style={{ marginTop: 8 }}>
         Grower contracts for SEASON-2026 (demo register — CRUD, approval workflow and the
-        enable/disable lifecycle arrive in Phase 2).
+        enable/disable lifecycle arrive in Phase 2). Click a contract number for its lines and
+        receipts.
       </Text>
       <div className={styles.toolbar}>
         <Input
@@ -99,7 +78,11 @@ export function ContractsPage() {
           <tbody>
             {contracts.data.value.map((c) => (
               <tr key={c.contractNumber}>
-                <td className={styles.cell}>{c.contractNumber}</td>
+                <td className={styles.cell}>
+                  <RouterLink to={`/contracts/${encodeURIComponent(c.contractNumber)}`} className={styles.link}>
+                    {c.contractNumber}
+                  </RouterLink>
+                </td>
                 <td className={styles.cell}>
                   {c.vendorName}
                   <br />

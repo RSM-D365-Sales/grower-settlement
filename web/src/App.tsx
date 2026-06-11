@@ -4,6 +4,7 @@ import { RequireAuth } from "./components/RequireAuth";
 import { RequireRole } from "./components/RequireRole";
 import { navItemFor } from "./nav/navConfig";
 import { AdminPage } from "./pages/AdminPage";
+import { ContractDetailPage } from "./pages/ContractDetailPage";
 import { ContractsPage } from "./pages/ContractsPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { ItemsPage } from "./pages/ItemsPage";
@@ -30,6 +31,10 @@ export function App() {
           <Route path="vendors" element={guarded("/vendors", <VendorsPage />)} />
           <Route path="items" element={guarded("/items", <ItemsPage />)} />
           <Route path="contracts" element={guarded("/contracts", <ContractsPage />)} />
+          <Route
+            path="contracts/:contractNumber"
+            element={guarded("/contracts", <ContractDetailPage />)}
+          />
           <Route path="receiving" element={guarded("/receiving", <ReceivingPage />)} />
           <Route path="sales" element={guarded("/sales", <SalesPage />)} />
           <Route path="traceability" element={guarded("/traceability", <TraceabilityPage />)} />

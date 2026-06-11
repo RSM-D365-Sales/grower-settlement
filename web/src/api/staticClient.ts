@@ -25,6 +25,7 @@ interface Contractish {
 interface Receiptish {
   receiptDate: string;
   vendorAccount: string;
+  contractNumber: string;
 }
 interface SalesOrderish {
   orderDate: string;
@@ -61,6 +62,16 @@ export async function staticGet<T>(path: string, user: AppUser | null): Promise<
   const search = q.get("search")?.trim().toLowerCase() ?? "";
   const days = Math.min(Math.max(Number(q.get("days") ?? 7) || 7, 1), 31);
   const vendor = q.get("vendor")?.trim() ?? "";
+  const contract = q.get("contract")?.trim() ?? "";
+
+  // Contract drill-in: /contracts/<number>
+  if (route.startsWith("/contracts/")) {
+    const number = decodeURIComponent(route.slice("/contracts/".length));
+    const all = await load<Contractish[]>("contracts.json");
+    const found = all.find((c) => c.contractNumber === number);
+    if (!found) throw new ApiError(404, `Contract ${number} not found`);
+    return found as T;
+  }
 
   switch (route) {
     case "/health":
@@ -119,6 +130,7 @@ export async function staticGet<T>(path: string, user: AppUser | null): Promise<
       const dates = all.map((r) => r.receiptDate);
       let value = all.filter((r) => inWindow(dates, r.receiptDate, days));
       if (vendor) value = value.filter((r) => r.vendorAccount === vendor);
+      if (contract) value = value.filter((r) => r.contractNumber === contract);
       value = [...value].sort((a, b) => b.receiptDate.localeCompare(a.receiptDate));
       return { value } as T;
     }

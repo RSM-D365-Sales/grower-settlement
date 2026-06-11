@@ -34,3 +34,18 @@ app.http("contracts", {
     return { jsonBody: { value: contracts } };
   }),
 });
+
+/** Contract drill-in: header + individual lines (item, UoM, rate/commission). */
+app.http("contractDetail", {
+  methods: ["GET"],
+  authLevel: "anonymous",
+  route: "contracts/{contractNumber}",
+  handler: withAuth(async (req) => {
+    const contractNumber = req.params.contractNumber ?? "";
+    const contract = getDemoData().contracts.find((c) => c.contractNumber === contractNumber);
+    if (!contract) {
+      return { status: 404, jsonBody: { error: `Contract ${contractNumber} not found` } };
+    }
+    return { jsonBody: contract };
+  }),
+});
