@@ -7,6 +7,12 @@
  */
 import { ApiError } from "./ApiError";
 import type { AppUser } from "../auth/AuthContext";
+import {
+  buildSettlementPreview,
+  type CalcContract,
+  type CalcReceipt,
+  type CalcSalesOrder,
+} from "./settlementPreviewCalc";
 
 interface Vendorish {
   vendorAccount: string;
@@ -149,6 +155,36 @@ export async function staticGet<T>(path: string, user: AppUser | null): Promise<
       const allowed = user?.roles.some((r) => r === "Accountant" || r === "Admin") ?? false;
       if (!allowed) throw new ApiError(403, "Insufficient role");
       return { value: [], note: "Settlement engine arrives in Phase 6" } as T;
+    }
+
+    case "/settlement/preview": {
+      const allowed = user?.roles.some((r) => r === "Accountant" || r === "Admin") ?? false;
+      if (!allowed) throw new ApiError(403, "Insufficient role");
+      const from = q.get("from") ?? "";
+      const to = q.get("to") ?? "";
+      const basisParam = q.get("basis") ?? "both";
+      const basis = basisParam === "receipt" || basisParam === "sales" ? basisParam : "both";
+      if (!vendor || !/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to) || from > to) {
+        throw new ApiError(400, "Invalid query");
+      }
+      const [contracts, receipts, salesOrders, items] = await Promise.all([
+        load<CalcContract[]>("contracts.json"),
+        load<CalcReceipt[]>("receipts.json"),
+        load<CalcSalesOrder[]>("salesorders.json"),
+        load<Itemish[]>("items.json"),
+      ]);
+      const preview = buildSettlementPreview({
+        contracts,
+        receipts,
+        salesOrders,
+        commodityByItem: new Map(items.map((i) => [i.itemNumber, i.commodityCode])),
+        vendorAccount: vendor,
+        fromDate: from,
+        toDate: to,
+        basis,
+      });
+      if (!preview) throw new ApiError(404, `No contracts for vendor ${vendor}`);
+      return preview as T;
     }
 
     default:
