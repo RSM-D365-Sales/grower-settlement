@@ -1,0 +1,19 @@
+{
+  "IsEncrypted": false,
+  "Values": {
+    "AzureWebJobsStorage": "",
+    "FUNCTIONS_WORKER_RUNTIME": "node",
+    "AUTH_MODE": "mock",
+    "MOCK_ROLES": "Admin",
+    "D365_MODE": "mock",
+    "ENTRA_TENANT_ID": "",
+    "API_CLIENT_ID": "",
+    "D365_BASE_URL": "",
+    "D365_CLIENT_ID": "",
+    "D365_CLIENT_SECRET": "",
+    "DATABASE_URL": ""
+  },
+  "Host": {
+    "CORS": "http://localhost:5174"
+  }
+}

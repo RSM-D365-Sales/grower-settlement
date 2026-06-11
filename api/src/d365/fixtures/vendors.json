@@ -1,0 +1,22 @@
+[
+  { "vendorAccount": "V-1001", "name": "Sunrise Berry Farms LLC", "city": "Watsonville", "state": "CA", "currency": "USD", "paymentTerms": "Net30", "dataAreaId": "usmf" },
+  { "vendorAccount": "V-1002", "name": "Castillo Family Growers", "city": "Salinas", "state": "CA", "currency": "USD", "paymentTerms": "Net30", "dataAreaId": "usmf" },
+  { "vendorAccount": "V-1003", "name": "Pacific Coast Organics", "city": "Santa Maria", "state": "CA", "currency": "USD", "paymentTerms": "Net15", "dataAreaId": "usmf" },
+  { "vendorAccount": "V-1004", "name": "Bluebird Orchards", "city": "Fresno", "state": "CA", "currency": "USD", "paymentTerms": "Net30", "dataAreaId": "usmf" },
+  { "vendorAccount": "V-1005", "name": "Rio Verde Produce Co.", "city": "Bakersfield", "state": "CA", "currency": "USD", "paymentTerms": "Net45", "dataAreaId": "usmf" },
+  { "vendorAccount": "V-1006", "name": "Hartley & Sons Farms", "city": "Modesto", "state": "CA", "currency": "USD", "paymentTerms": "Net30", "dataAreaId": "usmf" },
+  { "vendorAccount": "V-1007", "name": "Mesa Grande Growers Cooperative", "city": "Visalia", "state": "CA", "currency": "USD", "paymentTerms": "Net30", "dataAreaId": "usmf" },
+  { "vendorAccount": "V-1008", "name": "Willamette Valley Berries", "city": "Salem", "state": "OR", "currency": "USD", "paymentTerms": "Net15", "dataAreaId": "usmf" },
+  { "vendorAccount": "V-1009", "name": "San Joaquin Stone Fruit Co.", "city": "Reedley", "state": "CA", "currency": "USD", "paymentTerms": "Net30", "dataAreaId": "usmf" },
+  { "vendorAccount": "V-1010", "name": "Delta Fresh Farms", "city": "Stockton", "state": "CA", "currency": "USD", "paymentTerms": "Net30", "dataAreaId": "usmf" },
+  { "vendorAccount": "V-1011", "name": "Kern County Potato Growers", "city": "Shafter", "state": "CA", "currency": "USD", "paymentTerms": "Net45", "dataAreaId": "usmf" },
+  { "vendorAccount": "V-1012", "name": "Sierra Gold Citrus Ranch", "city": "Exeter", "state": "CA", "currency": "USD", "paymentTerms": "Net30", "dataAreaId": "usmf" },
+  { "vendorAccount": "V-1013", "name": "Lodi Vine & Row", "city": "Lodi", "state": "CA", "currency": "USD", "paymentTerms": "Net30", "dataAreaId": "usmf" },
+  { "vendorAccount": "V-1014", "name": "Merced Valley Vegetables", "city": "Merced", "state": "CA", "currency": "USD", "paymentTerms": "Net30", "dataAreaId": "usmf" },
+  { "vendorAccount": "V-1015", "name": "Oxnard Coastal Berry Co.", "city": "Oxnard", "state": "CA", "currency": "USD", "paymentTerms": "Net15", "dataAreaId": "usmf" },
+  { "vendorAccount": "V-1016", "name": "Yuba Gold Orchards", "city": "Yuba City", "state": "CA", "currency": "USD", "paymentTerms": "Net30", "dataAreaId": "usmf" },
+  { "vendorAccount": "V-1017", "name": "Salinas Greens Co.", "city": "Salinas", "state": "CA", "currency": "USD", "paymentTerms": "Net15", "dataAreaId": "usmf" },
+  { "vendorAccount": "V-1018", "name": "Madera Grape Estates", "city": "Madera", "state": "CA", "currency": "USD", "paymentTerms": "Net30", "dataAreaId": "usmf" },
+  { "vendorAccount": "V-1019", "name": "Hanford Root & Tuber Farms", "city": "Hanford", "state": "CA", "currency": "USD", "paymentTerms": "Net45", "dataAreaId": "usmf" },
+  { "vendorAccount": "V-1020", "name": "Skagit Valley Produce", "city": "Mount Vernon", "state": "WA", "currency": "USD", "paymentTerms": "Net30", "dataAreaId": "usmf" }
+]

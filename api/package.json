@@ -1,0 +1,31 @@
+{
+  "name": "grower-api",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Grower Contract & Settlement Platform — Azure Functions API",
+  "main": "dist/src/functions/*.js",
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc --noEmit",
+    "dev": "npm run build && func start",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "export:demo": "npm run build && node dist/src/scripts/exportDemoData.js ../web/public/demo",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev"
+  },
+  "dependencies": {
+    "@azure/functions": "^4.7.0",
+    "@prisma/client": "^6.8.0",
+    "jsonwebtoken": "^9.0.2",
+    "jwks-rsa": "^3.2.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/jsonwebtoken": "^9.0.9",
+    "@types/node": "^20.17.0",
+    "prisma": "^6.8.0",
+    "typescript": "^5.8.3",
+    "vitest": "^3.1.4"
+  }
+}

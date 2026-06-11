@@ -1,0 +1,70 @@
+name: Deploy web to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths: ['web/**', 'api/**', '.github/workflows/deploy-web.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: |
+            web/package-lock.json
+            api/package-lock.json
+
+      # Bake the demo seed into the site so the SPA runs with no backend
+      # (VITE_DATA_MODE=static). Once a Functions app is deployed, set the
+      # repository variables VITE_DATA_MODE=api + VITE_API_BASE_URL instead.
+      - run: npm ci
+        working-directory: api
+      - run: npm run build
+        working-directory: api
+      - name: Export demo data
+        run: node api/dist/src/scripts/exportDemoData.js web/public/demo
+
+      - run: npm ci
+        working-directory: web
+      - name: Build SPA
+        working-directory: web
+        env:
+          # Repo-path Pages URL → base must be /<repo>/ (Docs/PLAN.md §3).
+          # Switch to "/" if a custom domain is configured (open decision §10.7).
+          VITE_BASE: /${{ github.event.repository.name }}/
+          VITE_DATA_MODE: ${{ vars.VITE_DATA_MODE || 'static' }}
+          # Configure these as repository variables (Settings → Variables) to
+          # enable real Entra sign-in; otherwise the SPA runs in mock mode.
+          VITE_AUTH_MODE: ${{ vars.VITE_AUTH_MODE || 'mock' }}
+          VITE_API_BASE_URL: ${{ vars.VITE_API_BASE_URL }}
+          VITE_ENTRA_CLIENT_ID: ${{ vars.VITE_ENTRA_CLIENT_ID }}
+          VITE_ENTRA_TENANT_ID: ${{ vars.VITE_ENTRA_TENANT_ID }}
+          VITE_API_SCOPE: ${{ vars.VITE_API_SCOPE }}
+        run: npm run build
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: web/dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

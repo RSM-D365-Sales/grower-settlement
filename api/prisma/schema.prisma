@@ -1,0 +1,412 @@
+// Grower Contract & Settlement Platform — app database schema (Azure SQL).
+// Domain model per Docs/PLAN.md §5. SQL Server has no Prisma enum support,
+// so status/type discriminators are strings validated by Zod at the API
+// boundary (api/src — see Docs/DECISIONS.md).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlserver"
+  url      = env("DATABASE_URL")
+}
+
+// ── Contract domain ─────────────────────────────────────────────────────────
+
+model Season {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  startDate DateTime
+  endDate   DateTime
+  status    String   @default("Draft") // Draft | Active | Closed
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  contracts ContractHeader[]
+}
+
+// Vendor groups (contract scoping) and pools (settlement) share this table
+// with a type flag, per Docs/PLAN.md §5.
+model PartyGroup {
+  id            String    @id @default(cuid())
+  type          String // VendorGroup | Pool
+  name          String
+  effectiveFrom DateTime?
+  effectiveTo   DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  members           PartyGroupMember[]
+  contracts         ContractHeader[]
+  settlementBatches SettlementBatch[]
+}
+
+model PartyGroupMember {
+  id            String  @id @default(cuid())
+  groupId       String
+  vendorAccount String // D365 vendor account
+  // Pool distribution weight override; null = derive from contribution
+  weightOverride Decimal? @db.Decimal(9, 4)
+
+  group PartyGroup @relation(fields: [groupId], references: [id], onDelete: Cascade)
+
+  @@unique([groupId, vendorAccount])
+}
+
+model ContractHeader {
+  id             String    @id @default(cuid())
+  contractNumber String    @unique
+  // Either a single vendor or a vendor group — enforced in the service layer.
+  vendorAccount  String?
+  partyGroupId   String?
+  seasonId       String
+  validFrom      DateTime
+  validTo        DateTime
+  settlementType String // TradeAgreement | SalesCommission
+  status         String    @default("Draft") // Draft | Submitted | Approved | Enabled | Disabled | Closed
+  notes          String?   @db.NVarChar(Max)
+  createdBy      String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  season            Season             @relation(fields: [seasonId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  partyGroup        PartyGroup?        @relation(fields: [partyGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lines             ContractLine[]
+  receipts          Receipt[]
+  attachments       ContractAttachment[]
+}
+
+model ContractLine {
+  id            String    @id @default(cuid())
+  contractId    String
+  lineNumber    Int
+  scope         String // Item | Commodity | AllItems
+  itemNumber    String? // D365 item (scope=Item)
+  commodityCode String? // D365 product category (scope=Commodity)
+  uom           String
+  // Flat-rate lines (settlementType=TradeAgreement)
+  ratePerUnit   Decimal?  @db.Decimal(18, 4)
+  // Commission lines (settlementType=SalesCommission)
+  commissionPercent Decimal? @db.Decimal(7, 4)
+  // Tiered rates / deduction rules as validated JSON (SQL Server: string column)
+  ratesJson     String?   @db.NVarChar(Max)
+  deductionsJson String?  @db.NVarChar(Max)
+  effectiveFrom DateTime?
+  effectiveTo   DateTime?
+
+  contract     ContractHeader @relation(fields: [contractId], references: [id], onDelete: Cascade)
+  receiptLines ReceiptLine[]
+
+  @@unique([contractId, lineNumber])
+}
+
+model ContractAttachment {
+  id         String   @id @default(cuid())
+  contractId String
+  fileName   String
+  blobUrl    String
+  uploadedBy String
+  uploadedAt DateTime @default(now())
+
+  contract ContractHeader @relation(fields: [contractId], references: [id], onDelete: Cascade)
+}
+
+// ── Generic workflow engine ─────────────────────────────────────────────────
+
+model WorkflowDefinition {
+  id        String   @id @default(cuid())
+  code      String   @unique // e.g. CONTRACT_APPROVAL
+  name      String
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  steps     WorkflowStepDef[]
+  instances WorkflowInstance[]
+}
+
+model WorkflowStepDef {
+  id            String  @id @default(cuid())
+  definitionId  String
+  stepOrder     Int
+  name          String
+  requiredRole  String // Entra app role allowed to action this step
+  // Threshold conditions (e.g. amount limits) as validated JSON
+  conditionsJson String? @db.NVarChar(Max)
+
+  definition WorkflowDefinition @relation(fields: [definitionId], references: [id], onDelete: Cascade)
+
+  @@unique([definitionId, stepOrder])
+}
+
+model WorkflowInstance {
+  id               String   @id @default(cuid())
+  definitionId     String
+  entityType       String // e.g. ContractHeader | SettlementBatch
+  entityId         String
+  status           String   @default("InProgress") // InProgress | Approved | Rejected | Cancelled
+  currentStepOrder Int      @default(1)
+  startedBy        String
+  startedAt        DateTime @default(now())
+  completedAt      DateTime?
+
+  definition WorkflowDefinition @relation(fields: [definitionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  actions    WorkflowAction[]
+
+  @@index([entityType, entityId])
+}
+
+model WorkflowAction {
+  id         String   @id @default(cuid())
+  instanceId String
+  stepOrder  Int
+  action     String // Submit | Approve | Reject | Delegate | Comment
+  actorId    String
+  actorName  String
+  comment    String?  @db.NVarChar(Max)
+  createdAt  DateTime @default(now())
+
+  instance WorkflowInstance @relation(fields: [instanceId], references: [id], onDelete: Cascade)
+}
+
+// ── Receiving domain ────────────────────────────────────────────────────────
+
+model Receipt {
+  id            String    @id @default(cuid())
+  receiptNumber String    @unique
+  contractId    String
+  vendorAccount String
+  receiptDate   DateTime
+  dockDoorId    String?
+  loadRef       String?
+  status        String    @default("Open") // Open | Posted
+  d365PoNumber  String? // set once the PO push succeeds
+  d365ProductReceiptNumber String? // set once the message-processor post confirms
+  createdBy     String
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  contract ContractHeader @relation(fields: [contractId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  dockDoor DockDoor?      @relation(fields: [dockDoorId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lines    ReceiptLine[]
+}
+
+model ReceiptLine {
+  id             String   @id @default(cuid())
+  receiptId      String
+  contractLineId String?
+  lineNumber     Int
+  itemNumber     String
+  quantity       Decimal  @db.Decimal(18, 4)
+  uom            String
+  grossWeight    Decimal? @db.Decimal(18, 4)
+  tareWeight     Decimal? @db.Decimal(18, 4)
+  netWeight      Decimal? @db.Decimal(18, 4)
+  lotNumber      String // traceability key
+  grade          String?
+  qualityJson    String?  @db.NVarChar(Max)
+  scaleTicketId  String?
+  settledFlag    Boolean  @default(false) // double-settlement guard
+
+  receipt      Receipt       @relation(fields: [receiptId], references: [id], onDelete: Cascade)
+  contractLine ContractLine? @relation(fields: [contractLineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  scaleTicket  ScaleTicket?  @relation(fields: [scaleTicketId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  settlementLines SettlementLine[]
+
+  @@unique([receiptId, lineNumber])
+  @@index([lotNumber])
+}
+
+model ScaleTicket {
+  id          String   @id @default(cuid())
+  deviceId    String
+  grossWeight Decimal  @db.Decimal(18, 4)
+  tareWeight  Decimal  @db.Decimal(18, 4)
+  netWeight   Decimal  @db.Decimal(18, 4)
+  uom         String   @default("lb")
+  operator    String
+  capturedAt  DateTime @default(now())
+
+  receiptLines ReceiptLine[]
+}
+
+model DockDoor {
+  id     String  @id @default(cuid())
+  code   String  @unique
+  name   String
+  active Boolean @default(true)
+
+  receipts     Receipt[]
+  appointments Appointment[]
+}
+
+model Appointment {
+  id             String   @id @default(cuid())
+  dockDoorId     String
+  carrier        String?
+  loadRef        String?
+  scheduledStart DateTime
+  scheduledEnd   DateTime
+  status         String   @default("Scheduled") // Scheduled | Arrived | Unloading | Done | NoShow
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  dockDoor DockDoor @relation(fields: [dockDoorId], references: [id], onDelete: Cascade)
+}
+
+model LabelTemplate {
+  id        String   @id @default(cuid())
+  code      String   @unique
+  name      String
+  zpl       String   @db.NVarChar(Max) // ZPL with {{merge.fields}}
+  active    Boolean  @default(true)
+  updatedAt DateTime @updatedAt
+}
+
+// ── Traceability domain ─────────────────────────────────────────────────────
+
+model TraceNode {
+  id         String  @id @default(cuid())
+  nodeType   String // ReceiptLot | ProductionOrder | FinishedLot | SalesOrderLine | SalesInvoiceLine
+  refId      String // app id or D365 document/line reference
+  lotNumber  String?
+  itemNumber String?
+  dataAreaId String?
+  metaJson   String? @db.NVarChar(Max)
+
+  edgesFrom TraceEdge[] @relation("EdgeFrom")
+  edgesTo   TraceEdge[] @relation("EdgeTo")
+
+  @@unique([nodeType, refId])
+  @@index([lotNumber])
+}
+
+model TraceEdge {
+  id         String   @id @default(cuid())
+  fromNodeId String
+  toNodeId   String
+  quantity   Decimal? @db.Decimal(18, 4)
+  uom        String?
+  source     String // e.g. BusinessEvent:ProdOrderEnded | Sync:InventTrans
+  createdAt  DateTime @default(now())
+
+  fromNode TraceNode @relation("EdgeFrom", fields: [fromNodeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  toNode   TraceNode @relation("EdgeTo", fields: [toNodeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+
+  @@unique([fromNodeId, toNodeId, source])
+}
+
+// ── Settlement domain ───────────────────────────────────────────────────────
+
+model SettlementBatch {
+  id             String    @id @default(cuid())
+  batchNumber    String    @unique
+  vendorAccount  String? // single-vendor batch
+  partyGroupId   String? // pool batch
+  settlementType String // TradeAgreement | SalesCommission
+  periodStart    DateTime
+  periodEnd      DateTime
+  status         String    @default("Draft") // Draft | Calculated | InReview | Approved | Invoiced | Paid
+  currency       String    @default("USD")
+  totalGrowerAmount Decimal @default(0) @db.Decimal(18, 2)
+  createdBy      String
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  partyGroup  PartyGroup?            @relation(fields: [partyGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  lines       SettlementLine[]
+  adjustments SettlementAdjustment[]
+  payouts     PayoutDocument[]
+}
+
+model SettlementLine {
+  id            String   @id @default(cuid())
+  batchId       String
+  vendorAccount String // payee (pool batches contain lines for several vendors)
+  // Flat-rate source: app receipt line. Commission source: D365 sales invoice line ref.
+  receiptLineId       String?
+  salesInvoiceLineRef String?
+  quantity       Decimal? @db.Decimal(18, 4)
+  uom            String?
+  grossRevenue   Decimal? @db.Decimal(18, 2)
+  allocatedCosts Decimal? @db.Decimal(18, 2)
+  netRevenue     Decimal? @db.Decimal(18, 2)
+  rate           Decimal? @db.Decimal(18, 4)
+  commissionPercent Decimal? @db.Decimal(7, 4)
+  growerAmount   Decimal  @db.Decimal(18, 2)
+  // Allocation trail back to source documents (trace path, weights)
+  allocationJson String?  @db.NVarChar(Max)
+
+  batch       SettlementBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  receiptLine ReceiptLine?    @relation(fields: [receiptLineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  adjustments SettlementAdjustment[]
+}
+
+model SettlementAdjustment {
+  id               String   @id @default(cuid())
+  batchId          String
+  settlementLineId String? // null = batch-level adjustment
+  amount           Decimal  @db.Decimal(18, 2)
+  reasonCode       String
+  comment          String?  @db.NVarChar(Max)
+  createdBy        String
+  createdAt        DateTime @default(now())
+  requiresApproval Boolean  @default(false)
+  approvedBy       String?
+  approvedAt       DateTime?
+
+  batch SettlementBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+  line  SettlementLine? @relation(fields: [settlementLineId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+}
+
+model PayoutDocument {
+  id                   String    @id @default(cuid())
+  batchId              String
+  vendorAccount        String
+  pendingInvoiceId     String? // D365 pending vendor invoice id
+  postedInvoiceNumber  String?
+  paymentJournalId     String?
+  status               String    @default("Pending") // Pending | InvoiceCreated | InvoicePosted | PaymentCreated | Paid | Failed
+  createdAt            DateTime  @default(now())
+  updatedAt            DateTime  @updatedAt
+
+  batch SettlementBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+}
+
+// ── Cross-cutting ───────────────────────────────────────────────────────────
+
+// Immutable — insert only, never update or delete (enforced in service layer).
+model AuditLog {
+  id         String   @id @default(cuid())
+  entityType String
+  entityId   String
+  action     String // Create | Update | StatusChange | Approve | ...
+  actorId    String
+  actorName  String
+  beforeJson String?  @db.NVarChar(Max)
+  afterJson  String?  @db.NVarChar(Max)
+  createdAt  DateTime @default(now())
+
+  @@index([entityType, entityId])
+}
+
+// Every outbound D365 write: intent → attempt → success/fail. Never lose a
+// push silently (Docs/PLAN.md §6 resilience requirements).
+model IntegrationOutbox {
+  id             String   @id @default(cuid())
+  idempotencyKey String   @unique
+  targetSystem   String   @default("D365")
+  targetEntity   String // e.g. PurchaseOrderHeadersV2
+  operation      String // Create | Update | Action
+  payloadJson    String   @db.NVarChar(Max)
+  status         String   @default("Pending") // Pending | InFlight | Succeeded | Failed | Dead
+  attempts       Int      @default(0)
+  lastError      String?  @db.NVarChar(Max)
+  responseJson   String?  @db.NVarChar(Max)
+  correlationId  String?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@index([status, updatedAt])
+}

@@ -1,0 +1,8 @@
+[
+  { "symbol": "lb", "name": "Pound" },
+  { "symbol": "kg", "name": "Kilogram" },
+  { "symbol": "ea", "name": "Each" },
+  { "symbol": "cs", "name": "Case" },
+  { "symbol": "plt", "name": "Pallet" },
+  { "symbol": "ton", "name": "US Ton" }
+]
