@@ -22,6 +22,11 @@ export const NAV_ITEMS: NavItem[] = [
     allowed: ["Admin", "Accountant", "ContractManager", "ContractApprover", "Viewer"],
   },
   {
+    path: "/inbound",
+    label: "Inbound Gate",
+    allowed: ["Admin", "ReceivingClerk", "Viewer"],
+  },
+  {
     path: "/receiving",
     label: "Receiving",
     allowed: ["Admin", "ReceivingClerk", "Viewer"],

@@ -7,6 +7,7 @@ import { AdminPage } from "./pages/AdminPage";
 import { ContractDetailPage } from "./pages/ContractDetailPage";
 import { ContractsPage } from "./pages/ContractsPage";
 import { DashboardPage } from "./pages/DashboardPage";
+import { InboundGatePage } from "./pages/InboundGatePage";
 import { ItemsPage } from "./pages/ItemsPage";
 import { LoginPage } from "./pages/LoginPage";
 import { NotAuthorizedPage } from "./pages/NotAuthorizedPage";
@@ -35,6 +36,7 @@ export function App() {
             path="contracts/:contractNumber"
             element={guarded("/contracts", <ContractDetailPage />)}
           />
+          <Route path="inbound" element={guarded("/inbound", <InboundGatePage />)} />
           <Route path="receiving" element={guarded("/receiving", <ReceivingPage />)} />
           <Route path="sales" element={guarded("/sales", <SalesPage />)} />
           <Route path="traceability" element={guarded("/traceability", <TraceabilityPage />)} />

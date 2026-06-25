@@ -7,8 +7,10 @@
 export interface D365Vendor {
   vendorAccount: string;
   name: string;
+  street: string;
   city: string;
   state: string;
+  zip: string;
   currency: string;
   paymentTerms: string;
   dataAreaId: string;

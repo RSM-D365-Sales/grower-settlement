@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Badge, Dropdown, Option, Text, Title2 } from "@fluentui/react-components";
+import { Link as RouterLink } from "react-router-dom";
 import { useApi } from "../api/client";
 import { useTableStyles } from "../components/tableStyles";
 
@@ -50,8 +51,9 @@ export function ReceivingPage() {
       <Title2>Receiving</Title2>
       <Text block style={{ marginTop: 8 }}>
         Receipts against enabled contracts (~15/day seeded). Each receipt creates a D365 purchase
-        order; in-app posting via the message processor arrives in Phase 3. Scale tickets, labels
-        and dock doors arrive in Phase 4.
+        order; in-app posting via the message processor arrives in Phase 3. To weigh a truck in at
+        the dock, use the <RouterLink to="/inbound" className={styles.link}>Inbound Gate</RouterLink>{" "}
+        (RFID + scale capture — Phase 4 preview). Labels and dock-door scheduling arrive in Phase 4.
       </Text>
       <div className={styles.toolbar}>
         <Dropdown
