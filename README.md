@@ -4,13 +4,13 @@ Web application for produce buyers/packers/shippers managing the full grower lif
 
 📘 Master plan: [Docs/PLAN.md](Docs/PLAN.md) · Decisions log: [Docs/DECISIONS.md](Docs/DECISIONS.md) · Setup: [Docs/SETUP.md](Docs/SETUP.md)
 
-🌐 **Hosted demo:** http://www.rsmd365.com/grower-settlement/ (org custom domain; https://rsm-d365-sales.github.io/grower-settlement/ redirects there) — opens straight on the dashboard as an auto-signed-in demo identity, demo data baked in at deploy time (no backend; see decisions 0.12/0.14). Pushes to `main` redeploy automatically.
+🌐 **Hosted demo:** https://grower-settlement.rsmd365.com/ (Git-connected Cloudflare Pages) — opens straight on the settlement dashboard as an auto-signed-in demo identity, demo data baked in at deploy time (no backend; see decisions 0.12/0.14/0.17). Pushes to `main` redeploy automatically. **All data is synthetic** — the North Bay Produce branding is presales demo theming only (decision 0.17).
 
 ## Structure
 
 | Path | What | Deploy target |
 |---|---|---|
-| [`web/`](web/) | React 18 + Vite + TypeScript SPA (Fluent UI v9) | GitHub Pages |
+| [`web/`](web/) | React 18 + Vite + TypeScript SPA (Fluent UI v9) | Cloudflare Pages |
 | [`api/`](api/) | Azure Functions v4 (TypeScript) HTTP API + sync jobs | Azure Functions |
 | [`edge-agent/`](edge-agent/) | Node service stub for scale / Zebra label printers (Phase 4) | Receiving-station hardware |
 | [`infra/`](infra/) | Bicep IaC | Azure |

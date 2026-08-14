@@ -14,6 +14,7 @@ import { NotAuthorizedPage } from "./pages/NotAuthorizedPage";
 import { ReceivingPage } from "./pages/ReceivingPage";
 import { SalesPage } from "./pages/SalesPage";
 import { SettlementPage } from "./pages/SettlementPage";
+import { SettlementStatementPage } from "./pages/SettlementStatementPage";
 import { TraceabilityPage } from "./pages/TraceabilityPage";
 import { VendorsPage } from "./pages/VendorsPage";
 
@@ -41,6 +42,10 @@ export function App() {
           <Route path="sales" element={guarded("/sales", <SalesPage />)} />
           <Route path="traceability" element={guarded("/traceability", <TraceabilityPage />)} />
           <Route path="settlement" element={guarded("/settlement", <SettlementPage />)} />
+          <Route
+            path="settlement/statement/:vendorAccount"
+            element={guarded("/settlement", <SettlementStatementPage />)}
+          />
           <Route path="admin" element={guarded("/admin", <AdminPage />)} />
           <Route path="*" element={<NotAuthorizedPage />} />
         </Route>

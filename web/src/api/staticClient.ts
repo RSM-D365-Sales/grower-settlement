@@ -13,6 +13,7 @@ import {
   type CalcReceipt,
   type CalcSalesOrder,
 } from "./settlementPreviewCalc";
+import { buildPeriodReport } from "./periodReportCalc";
 
 interface Vendorish {
   vendorAccount: string;
@@ -155,6 +156,33 @@ export async function staticGet<T>(path: string, user: AppUser | null): Promise<
       const allowed = user?.roles.some((r) => r === "Accountant" || r === "Admin") ?? false;
       if (!allowed) throw new ApiError(403, "Insufficient role");
       return { value: [], note: "Settlement engine arrives in Phase 6" } as T;
+    }
+
+    case "/reports/period": {
+      // Mirrors api/src/functions/reports.ts: any authenticated role gets the
+      // activity report; settlement figures are shaped out below the
+      // Accountant/Admin gate (demo only — the real check is server-side).
+      if (!user) throw new ApiError(401, "Unauthenticated");
+      const from = q.get("from") ?? "";
+      const to = q.get("to") ?? "";
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(from) || !/^\d{4}-\d{2}-\d{2}$/.test(to) || from > to) {
+        throw new ApiError(400, "Invalid query");
+      }
+      const [contracts, receipts, salesOrders, items] = await Promise.all([
+        load<CalcContract[]>("contracts.json"),
+        load<CalcReceipt[]>("receipts.json"),
+        load<CalcSalesOrder[]>("salesorders.json"),
+        load<Itemish[]>("items.json"),
+      ]);
+      return buildPeriodReport({
+        contracts,
+        receipts,
+        salesOrders,
+        commodityByItem: new Map(items.map((i) => [i.itemNumber, i.commodityCode])),
+        fromDate: from,
+        toDate: to,
+        includeSettlements: user.roles.some((r) => r === "Accountant" || r === "Admin"),
+      }) as T;
     }
 
     case "/settlement/preview": {

@@ -1,10 +1,11 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { FluentProvider, webLightTheme } from "@fluentui/react-components";
+import { FluentProvider } from "@fluentui/react-components";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter } from "react-router-dom";
 import { App } from "./App";
 import { AuthProvider } from "./auth/AuthProvider";
+import { northBayTheme } from "./theme";
 
 // Hash routing keeps deep links working on GitHub Pages, which has no
 // server-side rewrites (Docs/PLAN.md §3 hosting note).
@@ -14,7 +15,7 @@ const queryClient = new QueryClient({
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <FluentProvider theme={webLightTheme}>
+    <FluentProvider theme={northBayTheme}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <HashRouter>

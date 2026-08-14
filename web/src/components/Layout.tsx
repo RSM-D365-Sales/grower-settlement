@@ -3,19 +3,29 @@ import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { hasAccess } from "../auth/roles";
 import { NAV_ITEMS } from "../nav/navConfig";
+import { NORTH_BAY } from "../theme";
 
 const useStyles = makeStyles({
-  root: { display: "grid", gridTemplateRows: "48px 1fr", gridTemplateColumns: "220px 1fr", height: "100vh" },
+  root: {
+    display: "grid",
+    gridTemplateRows: "52px 1fr auto",
+    gridTemplateColumns: "220px 1fr",
+    height: "100vh",
+  },
   header: {
     gridColumn: "1 / 3",
     display: "flex",
     alignItems: "center",
     gap: "12px",
     padding: "0 16px",
-    backgroundColor: tokens.colorBrandBackground,
-    color: tokens.colorNeutralForegroundOnBrand,
+    backgroundColor: NORTH_BAY.navy,
+    borderBottom: `3px solid ${NORTH_BAY.coral}`,
+    color: "#ffffff",
   },
-  headerTitle: { color: tokens.colorNeutralForegroundOnBrand, flexGrow: 1 },
+  brand: { display: "flex", alignItems: "baseline", gap: "10px", flexGrow: 1, flexWrap: "wrap" },
+  brandName: { color: "#ffffff", letterSpacing: "0.04em" },
+  brandTag: { color: "#c3d6e9", fontStyle: "italic" },
+  headerUser: { color: "#ffffff" },
   nav: {
     display: "flex",
     flexDirection: "column",
@@ -37,6 +47,12 @@ const useStyles = makeStyles({
     fontWeight: tokens.fontWeightSemibold,
   },
   main: { padding: "24px", overflowY: "auto" },
+  footer: {
+    gridColumn: "1 / 3",
+    padding: "8px 16px",
+    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
+    backgroundColor: tokens.colorNeutralBackground2,
+  },
 });
 
 export function Layout() {
@@ -47,12 +63,18 @@ export function Layout() {
   return (
     <div className={styles.root}>
       <header className={styles.header}>
-        <Title3 className={styles.headerTitle}>Grower Settlement</Title3>
-        <Text className={styles.headerTitle} style={{ flexGrow: 0 }}>
-          {user?.name}
-        </Text>
+        <div className={styles.brand}>
+          <Title3 className={styles.brandName}>NORTH BAY PRODUCE</Title3>
+          <Text size={200} className={styles.brandTag}>
+            Farmer Owned
+          </Text>
+          <Text size={300} className={styles.headerUser}>
+            · Grower Settlement
+          </Text>
+        </div>
+        <Text className={styles.headerUser}>{user?.name}</Text>
         {user?.roles.map((role) => (
-          <Badge key={role} appearance="outline" color="informative">
+          <Badge key={role} appearance="outline" color="informative" style={{ color: "#c3d6e9" }}>
             {role}
           </Badge>
         ))}
@@ -77,6 +99,13 @@ export function Layout() {
       <main className={styles.main}>
         <Outlet />
       </main>
+      <footer className={styles.footer}>
+        <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
+          Demonstration environment — all data is synthetic (growers, receipts, prices and
+          settlements are generated). Built by RSM to showcase Dynamics 365 F&SC grower accounting
+          concepts. Not affiliated with or endorsed by North Bay Produce, Inc. or Microsoft.
+        </Text>
+      </footer>
     </div>
   );
 }

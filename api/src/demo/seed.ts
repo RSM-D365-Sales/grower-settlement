@@ -5,8 +5,10 @@
  * to real persistence. Sales orders are D365-domain — the mock D365 client
  * serves them from this same seed (Docs/DECISIONS.md 0.11).
  *
- * Volumes: 20 growers (fixtures), 1–2 contracts each, ~15 receipts/day and
- * ~15 sales orders/day for the trailing 30 days.
+ * Volumes: 20 growers (fixtures), 1–2 contracts each, receipts and sales
+ * orders daily from Jan 1 of the anchor year ("today") through today, with a
+ * seasonal volume curve (peak mid-summer) so the fiscal-week dashboard reads
+ * like a real produce year.
  */
 import vendors from "../d365/fixtures/vendors.json";
 import products from "../d365/fixtures/products.json";
@@ -116,7 +118,20 @@ const CUSTOMERS = [
   { account: "C-2008", name: "Rocky Mountain Provisions" },
 ];
 
-const DAYS_OF_HISTORY = 30;
+/** Monthly volume multiplier (Jan..Dec) — produce receiving peaks mid-summer. */
+const SEASONAL = [0.45, 0.5, 0.6, 0.75, 0.95, 1.15, 1.3, 1.25, 1.05, 0.85, 0.6, 0.5];
+
+/** Days of history to generate: Jan 1 of today's (UTC) year through today. */
+function daysOfHistory(today: Date): number {
+  const jan1 = Date.UTC(today.getUTCFullYear(), 0, 1);
+  const utcToday = Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate());
+  return Math.floor((utcToday - jan1) / 86_400_000) + 1;
+}
+
+function seasonalCount(rng: () => number, date: Date): number {
+  const base = intBetween(rng, 13, 17);
+  return Math.max(4, Math.round(base * (SEASONAL[date.getUTCMonth()] ?? 1)));
+}
 
 // ── Deterministic RNG ───────────────────────────────────────────────────────
 
@@ -162,6 +177,8 @@ function itemUom(itemNumber: string): string {
 export function generateDemoData(today: Date = new Date()): DemoData {
   const rng = mulberry32(20260611);
   const todayStr = fmtDate(today);
+  const fy = today.getUTCFullYear();
+  const history = daysOfHistory(today);
 
   // Contracts: every grower gets a flat-rate contract; about half also get a
   // commission contract scoped to their primary commodity.
@@ -172,12 +189,12 @@ export function generateDemoData(today: Date = new Date()): DemoData {
     if (items.length === 0) continue;
 
     contracts.push({
-      contractNumber: `CT-2026-${String(contractSeq++).padStart(4, "0")}`,
+      contractNumber: `CT-${fy}-${String(contractSeq++).padStart(4, "0")}`,
       vendorAccount: vendor.vendorAccount,
       vendorName: vendor.name,
-      seasonCode: "SEASON-2026",
-      validFrom: "2026-01-01",
-      validTo: "2026-12-31",
+      seasonCode: `SEASON-${fy}`,
+      validFrom: `${fy}-01-01`,
+      validTo: `${fy}-12-31`,
       settlementType: "TradeAgreement",
       status: "Enabled",
       lines: items.map((item, i) => ({
@@ -194,12 +211,12 @@ export function generateDemoData(today: Date = new Date()): DemoData {
       const primaryCommodity = productByItem.get(items[0]!)?.commodityCode ?? null;
       const commodityName = commodities.find((c) => c.code === primaryCommodity)?.name;
       contracts.push({
-        contractNumber: `CT-2026-${String(contractSeq++).padStart(4, "0")}`,
+        contractNumber: `CT-${fy}-${String(contractSeq++).padStart(4, "0")}`,
         vendorAccount: vendor.vendorAccount,
         vendorName: vendor.name,
-        seasonCode: "SEASON-2026",
-        validFrom: "2026-01-01",
-        validTo: "2026-12-31",
+        seasonCode: `SEASON-${fy}`,
+        validFrom: `${fy}-01-01`,
+        validTo: `${fy}-12-31`,
         settlementType: "SalesCommission",
         status: rng() < 0.7 ? "Enabled" : "Approved",
         lines: [
@@ -219,16 +236,16 @@ export function generateDemoData(today: Date = new Date()): DemoData {
     (c) => c.status === "Enabled" && c.settlementType === "TradeAgreement"
   );
 
-  // Receipts: ~15/day for the trailing 30 days against enabled contracts.
+  // Receipts: seasonal daily volume from Jan 1 through today against enabled contracts.
   const receipts: DemoReceipt[] = [];
   let receiptSeq = 100001;
   let poSeq = 260001;
-  for (let offset = DAYS_OF_HISTORY - 1; offset >= 0; offset--) {
+  for (let offset = history - 1; offset >= 0; offset--) {
     const date = new Date(today);
     date.setUTCDate(date.getUTCDate() - offset);
     const dateStr = fmtDate(date);
     const lotDate = dateStr.replace(/-/g, "");
-    const perDay = intBetween(rng, 13, 17);
+    const perDay = seasonalCount(rng, date);
     for (let i = 0; i < perDay; i++) {
       const contract = pick(rng, enabledFlatRate);
       const available = VENDOR_ITEMS[contract.vendorAccount] ?? [];
@@ -259,16 +276,16 @@ export function generateDemoData(today: Date = new Date()): DemoData {
     }
   }
 
-  // Sales orders: ~15/day selling the same item catalog (production linkage
-  // arrives in Phase 5 — "later" per product owner).
+  // Sales orders: seasonal daily volume selling the same item catalog
+  // (production linkage arrives in Phase 5 — "later" per product owner).
   const allItems = products.map((p) => p.itemNumber);
   const salesOrders: D365SalesOrder[] = [];
   let soSeq = 300001;
-  for (let offset = DAYS_OF_HISTORY - 1; offset >= 0; offset--) {
+  for (let offset = history - 1; offset >= 0; offset--) {
     const date = new Date(today);
     date.setUTCDate(date.getUTCDate() - offset);
     const dateStr = fmtDate(date);
-    const perDay = intBetween(rng, 13, 17);
+    const perDay = seasonalCount(rng, date);
     for (let i = 0; i < perDay; i++) {
       const customer = pick(rng, CUSTOMERS);
       const lineCount = intBetween(rng, 1, 4);

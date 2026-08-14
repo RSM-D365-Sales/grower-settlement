@@ -4,6 +4,8 @@ import vendors from "../src/d365/fixtures/vendors.json";
 import products from "../src/d365/fixtures/products.json";
 
 const TODAY = new Date("2026-06-11T12:00:00Z");
+/** Jan 1 2026 through Jun 11 2026 inclusive. */
+const EXPECTED_DAYS = 162;
 const data = generateDemoData(TODAY);
 
 function countByDate(dates: string[]): Map<string, number> {
@@ -60,13 +62,21 @@ describe("demo seed — vendors & contracts", () => {
 });
 
 describe("demo seed — receipts", () => {
-  it("creates ~15 receipts (13–17) per day for 30 days", () => {
+  it("creates seasonal daily receipts from Jan 1 through today", () => {
     const perDay = countByDate(data.receipts.map((r) => r.receiptDate));
-    expect(perDay.size).toBe(30);
+    expect(perDay.size).toBe(EXPECTED_DAYS);
+    expect(perDay.get("2026-01-01")).toBeDefined();
     for (const [date, count] of perDay) {
-      expect(count, date).toBeGreaterThanOrEqual(13);
-      expect(count, date).toBeLessThanOrEqual(17);
+      // 13–17 base × seasonal 0.45–1.3, floored at 4.
+      expect(count, date).toBeGreaterThanOrEqual(4);
+      expect(count, date).toBeLessThanOrEqual(23);
     }
+    // Seasonality: June averages more receipts per day than January.
+    const monthAvg = (month: string) => {
+      const days = [...perDay.entries()].filter(([d]) => d.startsWith(month));
+      return days.reduce((s, [, c]) => s + c, 0) / days.length;
+    };
+    expect(monthAvg("2026-06")).toBeGreaterThan(monthAvg("2026-01"));
   });
 
   it("every receipt references an enabled contract of its own vendor and has lots + a PO", () => {
@@ -92,12 +102,12 @@ describe("demo seed — receipts", () => {
 });
 
 describe("demo seed — sales orders", () => {
-  it("creates ~15 sales orders (13–17) per day for 30 days", () => {
+  it("creates seasonal daily sales orders from Jan 1 through today", () => {
     const perDay = countByDate(data.salesOrders.map((s) => s.orderDate));
-    expect(perDay.size).toBe(30);
+    expect(perDay.size).toBe(EXPECTED_DAYS);
     for (const [date, count] of perDay) {
-      expect(count, date).toBeGreaterThanOrEqual(13);
-      expect(count, date).toBeLessThanOrEqual(17);
+      expect(count, date).toBeGreaterThanOrEqual(4);
+      expect(count, date).toBeLessThanOrEqual(23);
     }
   });
 
