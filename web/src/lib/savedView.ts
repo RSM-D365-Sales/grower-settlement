@@ -31,3 +31,23 @@ export function savePeriod(p: FiscalPeriod): void {
     // Storage unavailable (private mode) — the dashboard just defaults to today.
   }
 }
+
+const NAV_KEY = "grower-settlement.nav.collapsed";
+
+/** Sidebar collapse state, persisted per browser so a presenter can hide the
+ *  navigation once and demo full-screen across reloads. */
+export function loadNavCollapsed(): boolean {
+  try {
+    return localStorage.getItem(NAV_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+export function saveNavCollapsed(collapsed: boolean): void {
+  try {
+    localStorage.setItem(NAV_KEY, collapsed ? "1" : "0");
+  } catch {
+    // Storage unavailable — the sidebar just resets to expanded next visit.
+  }
+}

@@ -13,6 +13,7 @@ import { LoginPage } from "./pages/LoginPage";
 import { NotAuthorizedPage } from "./pages/NotAuthorizedPage";
 import { ReceivingPage } from "./pages/ReceivingPage";
 import { SalesPage } from "./pages/SalesPage";
+import { SettlementDetailPage } from "./pages/SettlementDetailPage";
 import { SettlementPage } from "./pages/SettlementPage";
 import { SettlementStatementPage } from "./pages/SettlementStatementPage";
 import { TraceabilityPage } from "./pages/TraceabilityPage";
@@ -42,6 +43,10 @@ export function App() {
           <Route path="sales" element={guarded("/sales", <SalesPage />)} />
           <Route path="traceability" element={guarded("/traceability", <TraceabilityPage />)} />
           <Route path="settlement" element={guarded("/settlement", <SettlementPage />)} />
+          <Route
+            path="settlement/:settlementId"
+            element={guarded("/settlement", <SettlementDetailPage />)}
+          />
           <Route
             path="settlement/statement/:vendorAccount"
             element={guarded("/settlement", <SettlementStatementPage />)}

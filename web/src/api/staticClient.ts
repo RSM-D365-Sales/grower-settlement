@@ -14,6 +14,7 @@ import {
   type CalcSalesOrder,
 } from "./settlementPreviewCalc";
 import { buildPeriodReport } from "./periodReportCalc";
+import type { SettlementRegister } from "./settlementData";
 
 interface Vendorish {
   vendorAccount: string;
@@ -70,6 +71,19 @@ export async function staticGet<T>(path: string, user: AppUser | null): Promise<
   const days = Math.min(Math.max(Number(q.get("days") ?? 7) || 7, 1), 31);
   const vendor = q.get("vendor")?.trim() ?? "";
   const contract = q.get("contract")?.trim() ?? "";
+
+  // Settlement register + drill-in — mirrors the API's Accountant/Admin hard
+  // gate (demo only — the real check is server-side).
+  if (route === "/settlements" || route.startsWith("/settlements/")) {
+    const allowed = user?.roles.some((r) => r === "Accountant" || r === "Admin") ?? false;
+    if (!allowed) throw new ApiError(403, "Insufficient role");
+    const register = await load<SettlementRegister>("settlements.json");
+    if (route === "/settlements") return { value: register.settlements } as T;
+    const id = decodeURIComponent(route.slice("/settlements/".length));
+    const found = register.settlements.find((s) => s.settlementId === id);
+    if (!found) throw new ApiError(404, `Settlement ${id} not found`);
+    return found as T;
+  }
 
   // Contract drill-in: /contracts/<number>
   if (route.startsWith("/contracts/")) {

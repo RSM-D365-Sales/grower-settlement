@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { useNavigate } from "react-router-dom";
 import {
   Badge,
   Button,
@@ -10,14 +11,24 @@ import {
   Text,
   Title2,
   Title3,
+  makeStyles,
+  tokens,
 } from "@fluentui/react-components";
 import { useApi } from "../api/client";
 import { useTableStyles } from "../components/tableStyles";
+import { formatMoney, growerLabel, type SettlementDoc } from "../api/settlementData";
 import type {
   PreviewBasis,
   PreviewSection,
   SettlementPreview,
 } from "../api/settlementPreviewCalc";
+
+const useRegisterStyles = makeStyles({
+  clickableRow: {
+    cursor: "pointer",
+    ":hover": { backgroundColor: tokens.colorNeutralBackground1Hover },
+  },
+});
 
 const BASIS_OPTIONS: { value: PreviewBasis; label: string }[] = [
   { value: "both", label: "Both contract types" },
@@ -38,11 +49,6 @@ const TXN_DISPLAY_LIMIT = 12;
 interface Vendor {
   vendorAccount: string;
   name: string;
-}
-
-interface BatchesResponse {
-  value: unknown[];
-  note?: string;
 }
 
 interface Criteria {
@@ -90,9 +96,9 @@ export function SettlementPage() {
     },
   });
 
-  const batches = useQuery({
-    queryKey: ["settlement-batches"],
-    queryFn: () => api.get<BatchesResponse>("/settlement/batches"),
+  const settlements = useQuery({
+    queryKey: ["settlements"],
+    queryFn: () => api.get<{ value: SettlementDoc[] }>("/settlements"),
   });
 
   const vendorLabel = (v: Vendor) => `${v.name} (${v.vendorAccount})`;
@@ -103,10 +109,25 @@ export function SettlementPage() {
     <div>
       <Title2>Settlement</Title2>
       <Text block style={{ marginTop: 8 }}>
-        Pick a grower, date range and contract type, then generate a preview of linked
-        transactions and the estimated grower payable. This is a mock calculation over demo data —
-        batch creation, adjustments and D365 posting arrive in Phase 6.
+        Grower settlements from D365 grower accounting: gross payable, premiums, deductions,
+        advances and commissions per settlement. Click a settlement to see its receipts, sales
+        invoices, premiums &amp; deductions and the advances being recovered.
       </Text>
+
+      <SettlementRegister
+        rows={settlements.data?.value}
+        isLoading={settlements.isLoading}
+        error={settlements.isError ? (settlements.error as Error) : null}
+      />
+
+      <div style={{ marginTop: 40 }}>
+        <Title3>What-if preview</Title3>
+        <Text block style={{ marginTop: 8 }}>
+          Pick a grower, date range and contract type, then generate a preview of linked
+          transactions and the estimated grower payable. This is a mock calculation over demo
+          data — batch creation, adjustments and D365 posting arrive in Phase 6.
+        </Text>
+      </div>
 
       <div className={styles.toolbar} style={{ alignItems: "flex-end" }}>
         <Field label="Grower">
@@ -163,19 +184,109 @@ export function SettlementPage() {
         <Text block>API error: {(preview.error as Error).message}</Text>
       )}
       {preview.data && !preview.isFetching && <PreviewResult preview={preview.data} />}
+    </div>
+  );
+}
 
-      <div style={{ marginTop: 40 }}>
-        <Title3>Settlement batches</Title3>
-        {batches.isLoading && <Text block>Loading…</Text>}
-        {batches.isError && <Text block>API error: {(batches.error as Error).message}</Text>}
-        {batches.data && (
-          <Text block className={styles.muted} style={{ marginTop: 4 }}>
-            {batches.data.value.length === 0
-              ? `No settlement batches yet. ${batches.data.note ?? ""}`
-              : `${batches.data.value.length} batches`}
-          </Text>
-        )}
-      </div>
+/** Settlement register — the real-ID settlements converted from the D365
+ *  grower-accounting workbook (Settlement-data.xlsx). Row click drills in. */
+function SettlementRegister({
+  rows,
+  isLoading,
+  error,
+}: {
+  rows: SettlementDoc[] | undefined;
+  isLoading: boolean;
+  error: Error | null;
+}) {
+  const styles = useTableStyles();
+  const registerStyles = useRegisterStyles();
+  const navigate = useNavigate();
+
+  if (isLoading) return <Text block style={{ marginTop: 16 }}>Loading settlements…</Text>;
+  if (error) return <Text block style={{ marginTop: 16 }}>API error: {error.message}</Text>;
+  if (!rows) return null;
+
+  const sorted = [...rows].sort((a, b) => b.settlementId.localeCompare(a.settlementId));
+  return (
+    <div style={{ marginTop: 16 }}>
+      <table className={styles.table}>
+        <thead>
+          <tr>
+            <th className={styles.cell}>Settlement</th>
+            <th className={styles.cell}>Description</th>
+            <th className={styles.cell}>Grower</th>
+            <th className={styles.cell}>Basis</th>
+            <th className={styles.cell}>Status</th>
+            <th className={`${styles.cell} ${styles.num}`}>Gross payable</th>
+            <th className={`${styles.cell} ${styles.num}`}>Premiums</th>
+            <th className={`${styles.cell} ${styles.num}`}>Deductions</th>
+            <th className={`${styles.cell} ${styles.num}`}>Advances</th>
+            <th className={`${styles.cell} ${styles.num}`}>Commissions</th>
+            <th className={`${styles.cell} ${styles.num}`}>Net grower return</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sorted.map((s) => (
+            <tr
+              key={s.settlementId}
+              className={registerStyles.clickableRow}
+              onClick={() => navigate(`/settlement/${encodeURIComponent(s.settlementId)}`)}
+            >
+              <td className={styles.cell}>
+                <Text className={styles.link}>{s.settlementId}</Text>
+              </td>
+              <td className={styles.cell}>{s.description}</td>
+              <td className={styles.cell}>{growerLabel(s)}</td>
+              <td className={styles.cell}>
+                <Badge
+                  appearance="tint"
+                  color={s.basis === "Sales invoice based" ? "informative" : "brand"}
+                >
+                  {s.basis === "Sales invoice based" ? "Sales invoice" : "Receipt"}
+                </Badge>
+                {s.pooled && (
+                  <Badge appearance="tint" color="severe" style={{ marginLeft: 4 }}>
+                    Pooled
+                  </Badge>
+                )}
+              </td>
+              <td className={styles.cell}>
+                <Badge
+                  appearance="tint"
+                  color={
+                    s.status === "Settled" ? "success" : s.status === "In process" ? "brand" : "warning"
+                  }
+                >
+                  {s.status}
+                </Badge>
+              </td>
+              <td className={`${styles.cell} ${styles.num}`}>
+                {formatMoney(s.totals.gross, s.currency)}
+              </td>
+              <td className={`${styles.cell} ${styles.num}`}>
+                {s.totals.premiums ? `+${formatMoney(s.totals.premiums, s.currency)}` : "—"}
+              </td>
+              <td className={`${styles.cell} ${styles.num}`}>
+                {s.totals.deductions ? `−${formatMoney(s.totals.deductions, s.currency)}` : "—"}
+              </td>
+              <td className={`${styles.cell} ${styles.num}`}>
+                {s.totals.advances ? `−${formatMoney(s.totals.advances, s.currency)}` : "—"}
+              </td>
+              <td className={`${styles.cell} ${styles.num}`}>
+                {s.totals.commissions ? `−${formatMoney(s.totals.commissions, s.currency)}` : "—"}
+              </td>
+              <td className={`${styles.cell} ${styles.num}`}>
+                {formatMoney(s.totals.net, s.currency)}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      <Text block className={styles.muted} style={{ marginTop: 6 }}>
+        {sorted.length} settlements · converted from the D365 settlement workbook · net = gross +
+        premiums − deductions − commissions − advances
+      </Text>
     </div>
   );
 }

@@ -5,6 +5,7 @@ import { SETTLEMENT_ROLES } from "../auth/roles";
 import { getDemoData } from "../demo/seed";
 import { buildSettlementPreview } from "../settlement/previewCalc";
 import products from "../d365/fixtures/products.json";
+import settlementRegister from "../demo/settlements.json";
 
 /**
  * Settlement endpoints are hard-gated to Accountant/Admin on every request
@@ -19,6 +20,48 @@ app.http("settlementBatches", {
     async () => ({
       jsonBody: { value: [], note: "Settlement engine arrives in Phase 6" },
     }),
+    { roles: SETTLEMENT_ROLES }
+  ),
+});
+
+/**
+ * Settlement register from the D365 grower-accounting workbook export
+ * (Settlement-data.xlsx → api/src/demo/settlements.json via
+ * scripts/convertSettlementWorkbook.ts). Read-only real-ID data for the demo;
+ * same Accountant/Admin hard gate as every settlement endpoint.
+ */
+app.http("settlementList", {
+  methods: ["GET"],
+  authLevel: "anonymous",
+  route: "settlements",
+  handler: withAuth(
+    async () => ({ jsonBody: { value: settlementRegister.settlements } }),
+    { roles: SETTLEMENT_ROLES }
+  ),
+});
+
+const settlementIdSchema = z.string().regex(/^[A-Za-z0-9-]{1,30}$/);
+
+/** Settlement drill-in: header, per-grower lines, receipts, sales invoices,
+ *  premiums/deductions and advances for one settlement. */
+app.http("settlementDetail", {
+  methods: ["GET"],
+  authLevel: "anonymous",
+  route: "settlements/{settlementId}",
+  handler: withAuth(
+    async (req) => {
+      const parsed = settlementIdSchema.safeParse(req.params.settlementId ?? "");
+      if (!parsed.success) {
+        return { status: 400, jsonBody: { error: "Invalid settlement id" } };
+      }
+      const found = settlementRegister.settlements.find(
+        (s) => s.settlementId === parsed.data
+      );
+      if (!found) {
+        return { status: 404, jsonBody: { error: `Settlement ${parsed.data} not found` } };
+      }
+      return { jsonBody: found };
+    },
     { roles: SETTLEMENT_ROLES }
   ),
 });

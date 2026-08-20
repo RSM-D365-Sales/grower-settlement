@@ -1,8 +1,20 @@
-import { Badge, Button, Text, Title3, makeStyles, tokens } from "@fluentui/react-components";
+import { useState } from "react";
+import {
+  Badge,
+  Button,
+  Text,
+  Title3,
+  Tooltip,
+  makeStyles,
+  mergeClasses,
+  tokens,
+} from "@fluentui/react-components";
+import { NavigationRegular } from "@fluentui/react-icons";
 import { NavLink, Outlet } from "react-router-dom";
 import { useAuth } from "../auth/AuthContext";
 import { hasAccess } from "../auth/roles";
 import { NAV_ITEMS } from "../nav/navConfig";
+import { loadNavCollapsed, saveNavCollapsed } from "../lib/savedView";
 import { NORTH_BAY } from "../theme";
 
 const useStyles = makeStyles({
@@ -12,6 +24,7 @@ const useStyles = makeStyles({
     gridTemplateColumns: "220px 1fr",
     height: "100vh",
   },
+  rootNavCollapsed: { gridTemplateColumns: "0px 1fr" },
   header: {
     gridColumn: "1 / 3",
     display: "flex",
@@ -46,7 +59,8 @@ const useStyles = makeStyles({
     backgroundColor: tokens.colorBrandBackground2,
     fontWeight: tokens.fontWeightSemibold,
   },
-  main: { padding: "24px", overflowY: "auto" },
+  // Pinned to column 2 so it stays in place when the nav is collapsed/unmounted.
+  main: { gridColumn: "2", gridRow: "2", padding: "24px", overflowY: "auto" },
   footer: {
     gridColumn: "1 / 3",
     padding: "8px 16px",
@@ -60,9 +74,30 @@ export function Layout() {
   const { mode, user, signOut } = useAuth();
   const items = NAV_ITEMS.filter((item) => user && hasAccess(user.roles, item.allowed));
 
+  // Collapsible sidebar for presenting a single pane full-width; the choice
+  // sticks per browser so the demo stays full-screen across reloads.
+  const [navCollapsed, setNavCollapsed] = useState(loadNavCollapsed);
+  const toggleNav = () =>
+    setNavCollapsed((prev) => {
+      saveNavCollapsed(!prev);
+      return !prev;
+    });
+
   return (
-    <div className={styles.root}>
+    <div className={mergeClasses(styles.root, navCollapsed && styles.rootNavCollapsed)}>
       <header className={styles.header}>
+        <Tooltip
+          content={navCollapsed ? "Show navigation" : "Hide navigation"}
+          relationship="label"
+        >
+          <Button
+            appearance="transparent"
+            icon={<NavigationRegular />}
+            style={{ color: "inherit", minWidth: 0 }}
+            aria-expanded={!navCollapsed}
+            onClick={toggleNav}
+          />
+        </Tooltip>
         <div className={styles.brand}>
           <Title3 className={styles.brandName}>NORTH BAY PRODUCE</Title3>
           <Text size={200} className={styles.brandTag}>
@@ -84,18 +119,22 @@ export function Layout() {
           </Button>
         )}
       </header>
-      <nav className={styles.nav}>
-        {items.map((item) => (
-          <NavLink
-            key={item.path}
-            to={item.path}
-            end={item.path === "/"}
-            className={({ isActive }) => `${styles.navLink} ${isActive ? styles.navLinkActive : ""}`}
-          >
-            {item.label}
-          </NavLink>
-        ))}
-      </nav>
+      {!navCollapsed && (
+        <nav className={styles.nav}>
+          {items.map((item) => (
+            <NavLink
+              key={item.path}
+              to={item.path}
+              end={item.path === "/"}
+              className={({ isActive }) =>
+                `${styles.navLink} ${isActive ? styles.navLinkActive : ""}`
+              }
+            >
+              {item.label}
+            </NavLink>
+          ))}
+        </nav>
+      )}
       <main className={styles.main}>
         <Outlet />
       </main>

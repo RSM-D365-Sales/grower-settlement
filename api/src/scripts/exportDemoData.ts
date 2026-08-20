@@ -10,6 +10,7 @@ import products from "../d365/fixtures/products.json";
 import commodities from "../d365/fixtures/commodities.json";
 import units from "../d365/fixtures/units.json";
 import { generateDemoData } from "../demo/seed";
+import settlementRegister from "../demo/settlements.json";
 
 const outDir = resolve(process.argv[2] ?? join(__dirname, "../../../../web/public/demo"));
 mkdirSync(outDir, { recursive: true });
@@ -23,6 +24,8 @@ const files: Record<string, unknown> = {
   "contracts.json": demo.contracts,
   "receipts.json": demo.receipts,
   "salesorders.json": demo.salesOrders,
+  // Generated from the settlement workbook — see scripts/convertSettlementWorkbook.ts
+  "settlements.json": settlementRegister,
 };
 
 for (const [name, data] of Object.entries(files)) {
