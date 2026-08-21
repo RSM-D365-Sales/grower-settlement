@@ -20,7 +20,7 @@ import { NORTH_BAY } from "../theme";
 const useStyles = makeStyles({
   root: {
     display: "grid",
-    gridTemplateRows: "52px 1fr auto",
+    gridTemplateRows: "52px 1fr",
     gridTemplateColumns: "220px 1fr",
     height: "100vh",
   },
@@ -61,12 +61,6 @@ const useStyles = makeStyles({
   },
   // Pinned to column 2 so it stays in place when the nav is collapsed/unmounted.
   main: { gridColumn: "2", gridRow: "2", padding: "24px", overflowY: "auto" },
-  footer: {
-    gridColumn: "1 / 3",
-    padding: "8px 16px",
-    borderTop: `1px solid ${tokens.colorNeutralStroke2}`,
-    backgroundColor: tokens.colorNeutralBackground2,
-  },
 });
 
 export function Layout() {
@@ -138,13 +132,6 @@ export function Layout() {
       <main className={styles.main}>
         <Outlet />
       </main>
-      <footer className={styles.footer}>
-        <Text size={200} style={{ color: tokens.colorNeutralForeground3 }}>
-          Demonstration environment — all data is synthetic (growers, receipts, prices and
-          settlements are generated). Built by RSM to showcase Dynamics 365 F&SC grower accounting
-          concepts. Not affiliated with or endorsed by North Bay Produce, Inc. or Microsoft.
-        </Text>
-      </footer>
     </div>
   );
 }

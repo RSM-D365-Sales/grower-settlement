@@ -171,6 +171,149 @@ const EXAMPLE_PREMIUMS: Array<{
   { settlementId: "ST000078", growerId: "R1004", receiptId: "REC000113", code: "PREM-EARLY", label: "Early delivery premium", amount: 600 },
 ];
 
+/** Settlements beyond the workbook export, transcribed from the D365 form
+ *  (screenshot-verified the same way as the ST000075 tie-out below). ST000080
+ *  "Premium 1" post-dates the last workbook pull; its receipt lines (REC000121/
+ *  REC000122 against CON000035, 8/20/2026) match the form, and the sales/
+ *  adjustment lines are constructed so the totals tie out to the header:
+ *  gross 3,770.00 / premiums 110.00 / deductions 22.00 / commissions 650.00 /
+ *  net 3,208.00. Drop entries here once a fresh workbook export includes them. */
+const EXTRA_SETTLEMENTS: SettlementDoc[] = [
+  {
+    settlementId: "ST000080",
+    description: "Premium 1",
+    poolId: null,
+    growerId: "EU-1001",
+    growerName: "Albert Heijn",
+    status: "Open",
+    basis: "Sales invoice based",
+    pooled: false,
+    fromDate: null,
+    toDate: null,
+    currency: "USD",
+    totals: { gross: 3770, premiums: 110, deductions: 22, advances: 0, commissions: 650, net: 3208 },
+    lines: [
+      {
+        growerId: "EU-1001",
+        growerName: "Albert Heijn",
+        gross: 3770,
+        premiums: 110,
+        deductions: 22,
+        advances: 0,
+        commissions: 650,
+        net: 3208,
+      },
+    ],
+    receipts: [
+      {
+        receiptId: "REC000121",
+        contractId: "CON000035",
+        receiptDate: "2026-08-20",
+        growerId: "EU-1001",
+        itemNumber: "F620",
+        itemName: "Strawberries, Bulk",
+        receiptQuantity: 1000,
+        receiptUnit: "lb",
+        settlementQuantity: 1000,
+        settlementUnit: "lb",
+        originalPrice: 1,
+        averagePrice: 1,
+        settlementPrice: 1,
+        amount: 1000,
+      },
+      {
+        receiptId: "REC000122",
+        contractId: "CON000035",
+        receiptDate: "2026-08-20",
+        growerId: "EU-1001",
+        itemNumber: "F620",
+        itemName: "Strawberries, Bulk",
+        receiptQuantity: 1200,
+        receiptUnit: "lb",
+        settlementQuantity: 1200,
+        settlementUnit: "lb",
+        originalPrice: 1,
+        averagePrice: 1,
+        settlementPrice: 1,
+        amount: 1200,
+      },
+    ],
+    sales: [
+      {
+        salesOrderId: "1970",
+        salesInvoiceId: "CIV-00000803",
+        invoiceDate: "2026-08-20",
+        growerId: "EU-1001",
+        customerAccount: "US-001",
+        customerName: "Contoso Retail San Diego",
+        itemNumber: "F620",
+        itemName: "Strawberries, Bulk",
+        invoiceQuantity: 1000,
+        invoiceUnit: "lb",
+        invoicePrice: 2.3,
+        currency: "USD",
+        settlementQuantity: 1000,
+        settlementUnit: "lb",
+        grossAmount: 2300,
+        commissionAmount: 400,
+        settlementAmount: 1878,
+      },
+      {
+        salesOrderId: "1971",
+        salesInvoiceId: "CIV-00000804",
+        invoiceDate: "2026-08-20",
+        growerId: "EU-1001",
+        customerAccount: "US-002",
+        customerName: "Contoso Retail Los Angeles",
+        itemNumber: "F620",
+        itemName: "Strawberries, Bulk",
+        invoiceQuantity: 700,
+        invoiceUnit: "lb",
+        invoicePrice: 2.1,
+        currency: "USD",
+        settlementQuantity: 700,
+        settlementUnit: "lb",
+        grossAmount: 1470,
+        commissionAmount: 250,
+        settlementAmount: 1220,
+      },
+    ],
+    adjustments: [
+      {
+        code: "ADJ000000007",
+        chargeCode: "FEE",
+        label: "Repacking",
+        kind: "deduction",
+        growerId: "EU-1001",
+        receiptId: "REC000122",
+        amount: 22,
+        source: "demo",
+      },
+      {
+        code: "PREM-QUALITY",
+        chargeCode: "PREMIUM",
+        label: "Quality premium – Grade A",
+        kind: "premium",
+        growerId: "EU-1001",
+        receiptId: "REC000121",
+        amount: 60,
+        source: "demo",
+      },
+      {
+        code: "PREM-EARLY",
+        chargeCode: "PREMIUM",
+        label: "Early delivery premium",
+        kind: "premium",
+        growerId: "EU-1001",
+        receiptId: "REC000122",
+        amount: 50,
+        source: "demo",
+      },
+    ],
+    advances: [],
+  },
+];
+
 /** Enum mappings observed against the D365 form (ST000075 shows Settled /
  *  Sales invoice based) — recorded in Docs/DECISIONS.md 0.18. */
 const STATUS_LABELS: Array<SettlementDoc["status"]> = ["Open", "In process", "Settled"];
@@ -495,8 +638,10 @@ function convert(workbookPath: string): SettlementRegister {
         adjustments,
         advances,
       };
-    })
-    .sort((a, b) => a.settlementId.localeCompare(b.settlementId));
+    });
+
+  settlements.push(...EXTRA_SETTLEMENTS);
+  settlements.sort((a, b) => a.settlementId.localeCompare(b.settlementId));
 
   return { generatedFrom: "Settlement-data.xlsx", settlements };
 }
