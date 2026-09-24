@@ -1,35 +1,46 @@
 /**
- * North Bay Produce demo branding (Docs/DECISIONS.md 0.17). Brand ramp built
- * around the palette on northbayproduce.com — deep navy #0F2436, slate blue
- * #425B76, coral accent #EF6B51 — snapped to a chromatic blue so interactive
- * elements stay legible. Chart series colors live in components/PeriodCharts.
+ * Bluestem Fresh Produce demo branding (Docs/DECISIONS.md 0.20). Bluestem is a
+ * fictional company; its palette is borrowed from rsmus.com so the app reads
+ * as RSM-built (see ../../Blustem-company-details/BRAND_GUIDE.md). Fluent brand
+ * ramp is built around RSM Blue #009CDE (step 80 = primary buttons / links /
+ * active nav); Midnight #00153D is the header bar and headings. Chart series
+ * colors live in components/PeriodCharts.
  */
 import { BrandVariants, createLightTheme, Theme } from "@fluentui/react-components";
 
-export const NORTH_BAY = {
-  navy: "#0f2436",
-  slate: "#425b76",
-  coral: "#ef6b51",
-  offWhite: "#f8fafc",
+export const BLUESTEM = {
+  blue: "#009cde", // RSM Blue — primary actions, links, active nav, chart series 1
+  midnight: "#00153d", // Midnight — header bar, headings, dark surfaces
+  green: "#3f9c35", // RSM Green — success / positive, chart series 2
+  midGrey: "#888b8d", // secondary text, axis labels
+  lightSky: "#e5f5fc", // selected rows, info banners (RSM Blue at 10%)
+  fog: "#f2f3f4", // page background alt, table stripes
+  amber: "#f2a900", // warning / watch
+  red: "#d0342c", // errors, negative margin
+  /** Secondary text on Midnight surfaces. */
+  onMidnightMuted: "#c9d1db",
 } as const;
 
-const northBayRamp: BrandVariants = {
-  10: "#061019",
-  20: "#0a1a29",
-  30: "#0f2436",
-  40: "#142e45",
-  50: "#193954",
-  60: "#1f4363",
-  70: "#254e72",
-  80: "#2c5881",
-  90: "#33628f",
-  100: "#3a6ea5",
-  110: "#4a7cb1",
-  120: "#6291bf",
-  130: "#82a9cd",
-  140: "#a3c0db",
-  150: "#c3d6e9",
-  160: "#e2ebf4",
+/** Heading stack per the brand guide: Poppins SemiBold; body stays Segoe UI. */
+export const HEADING_FONT = "'Poppins', 'Segoe UI', system-ui, sans-serif";
+
+const bluestemRamp: BrandVariants = {
+  10: "#001a29",
+  20: "#002a42",
+  30: "#003a5b",
+  40: "#004b75",
+  50: "#005c8f",
+  60: "#006ea9",
+  70: "#0083c2",
+  80: "#009cde",
+  90: "#1ea7e2",
+  100: "#3fb3e6",
+  110: "#5fbfea",
+  120: "#7ecaee",
+  130: "#9cd6f2",
+  140: "#b9e1f6",
+  150: "#d4ecfa",
+  160: "#e5f5fc",
 };
 
-export const northBayTheme: Theme = createLightTheme(northBayRamp);
+export const bluestemTheme: Theme = createLightTheme(bluestemRamp);

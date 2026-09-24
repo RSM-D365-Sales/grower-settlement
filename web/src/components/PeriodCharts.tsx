@@ -1,17 +1,18 @@
 /**
  * Inline-SVG charts for the settlement dashboard. Two series only —
- * Received (North Bay slate blue) and Sold (North Bay coral) — validated as a
- * categorical pair (CVD ΔE 17.1, normal 30.1, both ≥3:1 on white). Marks wear
+ * Received (RSM Blue) and Sold (RSM Green) — the first two steps of the
+ * Bluestem chart order (Blue → Green → Amber → Midnight → Mid Grey). Marks wear
  * the series colors; all text wears neutral text tokens. Full values live in
  * the product movement table below the charts (the table view).
  */
 import { ReactNode, useState } from "react";
 import { Text, tokens } from "@fluentui/react-components";
 import type { PeriodDayActivity, PeriodItemActivity } from "../api/periodReportCalc";
+import { BLUESTEM } from "../theme";
 
 export const SERIES = {
-  received: "#3a6ea5", // brand slate blue, chroma-snapped to pass the palette gates
-  sold: "#ef6b51", // brand coral accent
+  received: BLUESTEM.blue,
+  sold: BLUESTEM.green,
 } as const;
 
 const GRID = "#e1e0d9";

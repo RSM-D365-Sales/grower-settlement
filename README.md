@@ -4,7 +4,7 @@ Web application for produce buyers/packers/shippers managing the full grower lif
 
 📘 Master plan: [Docs/PLAN.md](Docs/PLAN.md) · Decisions log: [Docs/DECISIONS.md](Docs/DECISIONS.md) · Setup: [Docs/SETUP.md](Docs/SETUP.md)
 
-🌐 **Hosted demo:** https://grower-settlement.rsmd365.com/ (Git-connected Cloudflare Pages) — opens straight on the settlement dashboard as an auto-signed-in demo identity, demo data baked in at deploy time (no backend; see decisions 0.12/0.14/0.17). Pushes to `main` redeploy automatically. **All data is synthetic** — the North Bay Produce branding is presales demo theming only (decision 0.17).
+🌐 **Hosted demo:** https://grower-settlement.rsmd365.com/ (Git-connected Cloudflare Pages) — opens straight on the settlement dashboard as an auto-signed-in demo identity, demo data baked in at deploy time (no backend; see decisions 0.12/0.14/0.17). Pushes to `main` redeploy automatically. **All data is synthetic** — the app is branded as **Bluestem Fresh Produce**, RSM's fictional produce company for trade-show demos (brand kit in `../Blustem-company-details/`; decision 0.20).
 
 ## Structure
 

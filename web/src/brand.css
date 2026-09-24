@@ -1,0 +1,23 @@
+/*
+ * Bluestem brand typography (BRAND_GUIDE.md): headings in Poppins SemiBold to
+ * match the wordmark; body and tables stay on Fluent's Segoe UI stack so grids
+ * look like D365 F&SC. Poppins is bundled via @fontsource (no CDN — the demo
+ * must be self-contained). Fluent v9 text components carry fui-* class names;
+ * the doubled selector out-ranks Griffel's runtime-injected single-class rules.
+ */
+.fui-Display.fui-Display,
+.fui-LargeTitle.fui-LargeTitle,
+.fui-Title1.fui-Title1,
+.fui-Title2.fui-Title2,
+.fui-Title3.fui-Title3,
+.fui-Subtitle1.fui-Subtitle1,
+.fui-Subtitle2.fui-Subtitle2 {
+  font-family: "Poppins", "Segoe UI", system-ui, sans-serif;
+  font-weight: 600;
+}
+
+/* Tabular numerals in grids so amounts line up. */
+.fui-Table,
+.fui-DataGrid {
+  font-variant-numeric: tabular-nums;
+}

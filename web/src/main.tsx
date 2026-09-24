@@ -5,7 +5,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { HashRouter } from "react-router-dom";
 import { App } from "./App";
 import { AuthProvider } from "./auth/AuthProvider";
-import { northBayTheme } from "./theme";
+import { bluestemTheme } from "./theme";
+import "@fontsource/poppins/600.css";
+import "./brand.css";
 
 // Hash routing keeps deep links working on GitHub Pages, which has no
 // server-side rewrites (Docs/PLAN.md §3 hosting note).
@@ -15,7 +17,7 @@ const queryClient = new QueryClient({
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <FluentProvider theme={northBayTheme}>
+    <FluentProvider theme={bluestemTheme}>
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
           <HashRouter>

@@ -1,9 +1,9 @@
 import { useState } from "react";
 import {
+  Avatar,
   Badge,
   Button,
   Text,
-  Title3,
   Tooltip,
   makeStyles,
   mergeClasses,
@@ -15,12 +15,17 @@ import { useAuth } from "../auth/AuthContext";
 import { hasAccess } from "../auth/roles";
 import { NAV_ITEMS } from "../nav/navConfig";
 import { loadNavCollapsed, saveNavCollapsed } from "../lib/savedView";
-import { NORTH_BAY } from "../theme";
+import { BLUESTEM, HEADING_FONT } from "../theme";
+import bluestemLogo from "../assets/brand/bluestem_logo_on_midnight.png";
+import rsmLogo from "../assets/brand/rsmus-logo-white.png";
 
+// Header follows the Bluestem app-header pattern (BRAND_GUIDE.md): 48px
+// Midnight ribbon, bluestem logo left, app name in Poppins, "Powered by" +
+// RSM sponsor mark at the right end immediately left of the user avatar.
 const useStyles = makeStyles({
   root: {
     display: "grid",
-    gridTemplateRows: "52px 1fr",
+    gridTemplateRows: "48px 1fr",
     gridTemplateColumns: "220px 1fr",
     height: "100vh",
   },
@@ -31,14 +36,28 @@ const useStyles = makeStyles({
     alignItems: "center",
     gap: "12px",
     padding: "0 16px",
-    backgroundColor: NORTH_BAY.navy,
-    borderBottom: `3px solid ${NORTH_BAY.coral}`,
+    backgroundColor: BLUESTEM.midnight,
     color: "#ffffff",
   },
-  brand: { display: "flex", alignItems: "baseline", gap: "10px", flexGrow: 1, flexWrap: "wrap" },
-  brandName: { color: "#ffffff", letterSpacing: "0.04em" },
-  brandTag: { color: "#c3d6e9", fontStyle: "italic" },
-  headerUser: { color: "#ffffff" },
+  brand: { display: "flex", alignItems: "center", gap: "12px", flexGrow: 1, minWidth: 0 },
+  // The on-Midnight PNG carries its own clear space, so 36px shows the wordmark
+  // at roughly the guide's 28px.
+  brandLogo: { height: "36px", width: "auto", display: "block" },
+  appName: {
+    color: "#ffffff",
+    fontFamily: HEADING_FONT,
+    fontWeight: 600,
+    fontSize: "16px",
+    lineHeight: "1",
+    whiteSpace: "nowrap",
+    paddingLeft: "12px",
+    borderLeft: `1px solid ${BLUESTEM.onMidnightMuted}`,
+  },
+  headerUser: { color: "#ffffff", whiteSpace: "nowrap" },
+  divider: { width: "1px", height: "24px", backgroundColor: BLUESTEM.onMidnightMuted, opacity: 0.6 },
+  sponsor: { display: "flex", alignItems: "center", gap: "6px" },
+  sponsorLabel: { color: BLUESTEM.onMidnightMuted, fontSize: "11px", whiteSpace: "nowrap" },
+  sponsorLogo: { height: "22px", width: "auto", display: "block" },
   nav: {
     display: "flex",
     flexDirection: "column",
@@ -56,7 +75,8 @@ const useStyles = makeStyles({
     fontSize: tokens.fontSizeBase300,
   },
   navLinkActive: {
-    backgroundColor: tokens.colorBrandBackground2,
+    backgroundColor: BLUESTEM.lightSky,
+    color: BLUESTEM.midnight,
     fontWeight: tokens.fontWeightSemibold,
   },
   // Pinned to column 2 so it stays in place when the nav is collapsed/unmounted.
@@ -93,20 +113,30 @@ export function Layout() {
           />
         </Tooltip>
         <div className={styles.brand}>
-          <Title3 className={styles.brandName}>NORTH BAY PRODUCE</Title3>
-          <Text size={200} className={styles.brandTag}>
-            Farmer Owned
-          </Text>
-          <Text size={300} className={styles.headerUser}>
-            · Grower Settlement
-          </Text>
+          <img src={bluestemLogo} alt="bluestem Fresh Produce" className={styles.brandLogo} />
+          <span className={styles.appName}>Grower Settlement</span>
         </div>
-        <Text className={styles.headerUser}>{user?.name}</Text>
         {user?.roles.map((role) => (
-          <Badge key={role} appearance="outline" color="informative" style={{ color: "#c3d6e9" }}>
+          <Badge
+            key={role}
+            appearance="outline"
+            color="informative"
+            style={{ color: BLUESTEM.onMidnightMuted }}
+          >
             {role}
           </Badge>
         ))}
+        <span className={styles.divider} aria-hidden />
+        <span className={styles.sponsor}>
+          <span className={styles.sponsorLabel}>Powered by</span>
+          <img src={rsmLogo} alt="RSM" className={styles.sponsorLogo} />
+        </span>
+        {user && (
+          <>
+            <Avatar name={user.name} size={28} color="colorful" />
+            <Text className={styles.headerUser}>{user.name}</Text>
+          </>
+        )}
         {mode === "entra" && (
           <Button appearance="transparent" style={{ color: "inherit" }} onClick={signOut}>
             Sign out

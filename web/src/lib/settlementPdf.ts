@@ -1,5 +1,5 @@
 /**
- * Branded grower settlement statement PDF (Docs/DECISIONS.md 0.17).
+ * Bluestem-branded grower settlement statement PDF (Docs/DECISIONS.md 0.17, 0.20).
  * jsPDF + autotable are imported dynamically so the ~350 KB library loads only
  * when someone actually generates a statement. The document is a DEMO artifact:
  * every page carries a synthetic-data disclosure in the footer.
@@ -7,6 +7,8 @@
 import type { SettlementPreview } from "../api/settlementPreviewCalc";
 import type { FiscalPeriod } from "./fiscalWeek";
 import { periodRangeLabel, shortDate } from "./fiscalWeek";
+import bluestemLogo from "../assets/brand/bluestem_logo_on_midnight.png";
+import rsmLogoWhite from "../assets/brand/rsmus-logo-white.png";
 
 export interface StatementVendor {
   vendorAccount: string;
@@ -27,54 +29,91 @@ export interface StatementInput {
   status: string;
 }
 
-// North Bay Produce brand (from northbayproduce.com theme).
-const NAVY: [number, number, number] = [15, 36, 54];
-const SLATE: [number, number, number] = [66, 91, 118];
-const CORAL: [number, number, number] = [239, 107, 81];
+// Bluestem Fresh Produce brand (BRAND_GUIDE.md — palette borrowed from rsmus.com).
+const MIDNIGHT: [number, number, number] = [0, 21, 61];
+const RSM_BLUE: [number, number, number] = [0, 156, 222];
+const MID_GREY: [number, number, number] = [136, 139, 141];
+const FOG: [number, number, number] = [242, 243, 244];
 const INK: [number, number, number] = [11, 11, 11];
 const MUTED: [number, number, number] = [82, 81, 78];
 
+// Logo lockups are the brand PNGs. They are rasterized to roughly the size
+// they are placed at (on a Midnight background, as JPEG) before embedding —
+// jsPDF stores PNG pixels uncompressed, and the 2082px master alone would
+// push the statement past 3 MB.
+const LOGO_ON_MIDNIGHT = { url: bluestemLogo, w: 2082, h: 600 };
+const RSM_LOGO_WHITE = { url: rsmLogoWhite, w: 250, h: 106 };
+
 const DISCLOSURE =
   "DEMONSTRATION DOCUMENT — all figures are synthetic demo data. Not an invoice or payment advice. " +
-  "Prepared by RSM to showcase reporting concepts; not affiliated with or endorsed by North Bay Produce, Inc. or Microsoft.";
+  "Bluestem Fresh Produce is a fictional company created by RSM to showcase reporting concepts; not affiliated with or endorsed by Microsoft.";
 
 function usd(n: number): string {
   return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
 }
 
+/** Draw an image onto a Midnight-filled canvas `width` pt wide (rendered at
+ *  3× for print sharpness) and return it as a JPEG data URL. */
+async function rasterizeOnMidnight(url: string, width: number, aspect: number): Promise<string> {
+  const img = new Image();
+  await new Promise<void>((resolve, reject) => {
+    img.onload = () => resolve();
+    img.onerror = () => reject(new Error(`Could not load ${url}`));
+    img.src = url;
+  });
+  const canvas = document.createElement("canvas");
+  canvas.width = Math.round(width * 3);
+  canvas.height = Math.round((width * 3) / aspect);
+  const ctx = canvas.getContext("2d")!;
+  ctx.fillStyle = `rgb(${MIDNIGHT.join(",")})`;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+  return canvas.toDataURL("image/jpeg", 0.9);
+}
+
 export async function buildStatementPdf(input: StatementInput): Promise<{ blob: Blob; filename: string }> {
-  const [{ jsPDF }, autoTableModule] = await Promise.all([import("jspdf"), import("jspdf-autotable")]);
+  const logoH = 46;
+  const logoW = (LOGO_ON_MIDNIGHT.w / LOGO_ON_MIDNIGHT.h) * logoH;
+  const rsmH = 16;
+  const rsmW = (RSM_LOGO_WHITE.w / RSM_LOGO_WHITE.h) * rsmH;
+
+  const [{ jsPDF }, autoTableModule, logoData, rsmData] = await Promise.all([
+    import("jspdf"),
+    import("jspdf-autotable"),
+    rasterizeOnMidnight(LOGO_ON_MIDNIGHT.url, logoW, LOGO_ON_MIDNIGHT.w / LOGO_ON_MIDNIGHT.h),
+    rasterizeOnMidnight(RSM_LOGO_WHITE.url, rsmW, RSM_LOGO_WHITE.w / RSM_LOGO_WHITE.h),
+  ]);
   const autoTable = autoTableModule.default;
   const { preview, vendor, period, settlementNumber, status } = input;
 
-  const doc = new jsPDF({ unit: "pt", format: "letter" }); // 612 × 792 pt
+  const doc = new jsPDF({ unit: "pt", format: "letter", compress: true }); // 612 × 792 pt
   const pageW = doc.internal.pageSize.getWidth();
   const margin = 40;
 
-  // ── Header band ──────────────────────────────────────────────────────────
-  doc.setFillColor(...NAVY);
+  // ── Header band (Midnight ribbon, bluestem logo left, RSM sponsor mark right) ──
+  doc.setFillColor(...MIDNIGHT);
   doc.rect(0, 0, pageW, 84, "F");
-  doc.setFillColor(...CORAL);
+  doc.setFillColor(...RSM_BLUE);
   doc.rect(0, 84, pageW, 3, "F");
+
+  doc.addImage(logoData, "JPEG", margin - 8, 19, logoW, logoH);
 
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(19);
-  doc.text("NORTH BAY PRODUCE", margin, 38);
-  doc.setFont("helvetica", "italic");
-  doc.setFontSize(9.5);
-  doc.text("Farmer Owned · From our farms to your family, naturally", margin, 54);
-
-  doc.setFont("helvetica", "bold");
   doc.setFontSize(13);
-  doc.text("Grower Settlement Statement", pageW - margin, 38, { align: "right" });
+  doc.text("Grower Settlement Statement", pageW - margin, 34, { align: "right" });
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9.5);
-  doc.text(settlementNumber, pageW - margin, 54, { align: "right" });
+  doc.text(settlementNumber, pageW - margin, 49, { align: "right" });
+
+  doc.addImage(rsmData, "JPEG", pageW - margin - rsmW, 60, rsmW, rsmH);
+  doc.setTextColor(201, 209, 219);
+  doc.setFontSize(7.5);
+  doc.text("Powered by", pageW - margin - rsmW - 4, 71, { align: "right" });
 
   // ── Meta block ───────────────────────────────────────────────────────────
   let y = 112;
-  doc.setTextColor(...SLATE);
+  doc.setTextColor(...RSM_BLUE);
   doc.setFont("helvetica", "bold");
   doc.setFontSize(8.5);
   doc.text("SETTLE TO (GROWER)", margin, y);
@@ -117,7 +156,7 @@ export async function buildStatementPdf(input: StatementInput): Promise<{ blob: 
 
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10.5);
-    doc.setTextColor(...NAVY);
+    doc.setTextColor(...MIDNIGHT);
     doc.text(
       `Contract ${section.contractNumber} — ${isReceipts ? "Receipt-based (flat rate)" : "Sales-invoice based (commission)"}`,
       margin,
@@ -129,8 +168,8 @@ export async function buildStatementPdf(input: StatementInput): Promise<{ blob: 
       startY: y,
       margin: { left: margin, right: margin },
       styles: { font: "helvetica", fontSize: 8.5, textColor: INK, cellPadding: 4 },
-      headStyles: { fillColor: SLATE, textColor: [255, 255, 255], fontStyle: "bold" },
-      alternateRowStyles: { fillColor: [248, 250, 252] },
+      headStyles: { fillColor: MIDNIGHT, textColor: [255, 255, 255], fontStyle: "bold" },
+      alternateRowStyles: { fillColor: FOG },
       head: [
         isReceipts
           ? ["Item", "Qty received", "UoM", "Rate", "Amount payable"]
@@ -202,7 +241,7 @@ export async function buildStatementPdf(input: StatementInput): Promise<{ blob: 
   });
   y = (doc as unknown as { lastAutoTable: { finalY: number } }).lastAutoTable.finalY;
 
-  doc.setFillColor(...NAVY);
+  doc.setFillColor(...MIDNIGHT);
   doc.rect(330, y + 4, pageW - margin - 330, 26, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
@@ -215,7 +254,7 @@ export async function buildStatementPdf(input: StatementInput): Promise<{ blob: 
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i);
     const h = doc.internal.pageSize.getHeight();
-    doc.setDrawColor(...SLATE);
+    doc.setDrawColor(...MID_GREY);
     doc.setLineWidth(0.5);
     doc.line(margin, h - 46, pageW - margin, h - 46);
     doc.setFont("helvetica", "normal");
@@ -225,7 +264,7 @@ export async function buildStatementPdf(input: StatementInput): Promise<{ blob: 
     doc.text(`Page ${i} of ${pages}`, pageW - margin, h - 34, { align: "right" });
   }
 
-  const filename = `NorthBayProduce_Settlement_FY${period.fiscalYear}-P${String(period.period).padStart(2, "0")}_${vendor.vendorAccount}.pdf`;
+  const filename = `Bluestem_Settlement_FY${period.fiscalYear}-P${String(period.period).padStart(2, "0")}_${vendor.vendorAccount}.pdf`;
   return { blob: doc.output("blob"), filename };
 }
 

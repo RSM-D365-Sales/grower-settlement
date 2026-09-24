@@ -22,6 +22,7 @@ import { ArrowLeftRegular, ArrowDownloadRegular, MailRegular } from "@fluentui/r
 import { useApi } from "../api/client";
 import { useTableStyles } from "../components/tableStyles";
 import type { PreviewSection, SettlementPreview } from "../api/settlementPreviewCalc";
+import { BLUESTEM } from "../theme";
 import { FiscalPeriod, periodForDate, periodRangeLabel, periodsInYear } from "../lib/fiscalWeek";
 import { buildStatementPdf, downloadBlob, type StatementVendor } from "../lib/settlementPdf";
 
@@ -40,7 +41,7 @@ const useStyles = makeStyles({
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: "#0f2436", // North Bay navy
+    backgroundColor: BLUESTEM.midnight,
     color: "#ffffff",
     padding: "10px 14px",
     borderRadius: tokens.borderRadiusMedium,

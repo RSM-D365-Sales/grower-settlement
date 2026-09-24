@@ -26,6 +26,7 @@ import {
   SERIES,
 } from "../components/PeriodCharts";
 import type { PeriodReport, PeriodSettlementStatus } from "../api/periodReportCalc";
+import { BLUESTEM } from "../theme";
 import {
   FiscalPeriod,
   periodForDate,
@@ -76,7 +77,7 @@ const useStyles = makeStyles({
     width: "110px",
     height: "8px",
     borderRadius: "4px",
-    backgroundColor: "#cde2fb", // lighter step of the same blue ramp (meter track)
+    backgroundColor: BLUESTEM.lightSky, // meter track (RSM Blue at 10%)
     verticalAlign: "middle",
     marginRight: "8px",
     overflow: "hidden",
