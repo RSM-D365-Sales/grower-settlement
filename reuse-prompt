@@ -26,8 +26,10 @@ Deliverables, all in ./demo-kit:
    words-per-minute check. Lay a Windows text-to-speech scratch read over the picture
    (scratch-vo.mjs, rate +1, pronounce "D365" as "D three sixty-five") and adjust
    lines or seconds until every scene has spare time.
-3. The 12-second "Up next" title card: reuse interstitial.html, pass the app name via
-   ?next= and render it to interstitial.mp4.
+3. The booth reel: the 12-second "Up next" title card followed by the tour, as one MP4
+   (<app>-reel.mp4). Reuse interstitial.html, pass the app name via ?next=, render it to
+   interstitial.mp4, then join it to the tour MP4 (ffmpeg concat, stream copy; record.mjs
+   has a buildReel step and --only reel). Pull a frame either side of the join to check it.
 4. One self-contained HTML cheat sheet I can share with the team as a single file
    (fonts and logos inlined): at-a-glance strip (URL, persona, site, ERP environment,
    clip length), "before you walk up" checklist including what NOT to click, the story
@@ -58,8 +60,8 @@ Rules:
 - Rendered video goes in demo-kit/out (git-ignored). Don't commit or push unless I
   ask. Pull frames from the finished MP4 and look at them before telling me it's done.
 
-Finish with: the paths of the MP4s, the running time, the artifact link, and anything
-you could not verify.
+Finish with: the paths of the MP4s (tour, title card, reel), the running times, the
+artifact link, and anything you could not verify.
 ```
 
 Notes for reuse:
@@ -70,3 +72,5 @@ Notes for reuse:
   overlay, timing runner, MP4 conversion and interstitial carry over unchanged.
 - Keep the interstitial identical across apps so the loop reads as one reel; only the
   `?next=` label changes.
+- The per-app reel (title card + tour) is what goes on the booth loop; playing the
+  apps' reels back to back gives the whole IFPA loop with no extra editing.

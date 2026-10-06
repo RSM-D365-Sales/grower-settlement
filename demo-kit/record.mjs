@@ -4,6 +4,7 @@
  *   node demo-kit/record.mjs                       # tour + interstitial
  *   node demo-kit/record.mjs --only tour           # just the app tour
  *   node demo-kit/record.mjs --only interstitial   # just the title card
+ *   node demo-kit/record.mjs --only reel           # re-join the two MP4s into the reel
  *   node demo-kit/record.mjs --base http://localhost:5198 --no-captions
  *
  * The app must be running at --base (default http://localhost:5198) as a
@@ -12,6 +13,7 @@
  * Output (demo-kit/out/):
  *   grower-settlement-tour.webm / .mp4   the tour (length = sum of scenes.mjs seconds), 1920×1080
  *   interstitial.webm / .mp4             the 12 s title card between clips
+ *   grower-settlement-reel.mp4           title card + tour, back to back: the file for the booth loop
  *   tour-timings.json                    measured scene boundaries (for VO alignment)
  *
  * MP4 (H.264) needs an ffmpeg with libx264. The script looks for, in order:
@@ -524,6 +526,27 @@ function toMp4(webm, mp4, leadIn, duration) {
   else console.log('  ffmpeg failed with status', r.status)
 }
 
+/** Title card followed by the tour, as one file for the booth loop. Both MP4s
+ *  come out of toMp4 with identical encoding, so the join is a stream copy. */
+function buildReel() {
+  const ff = findFfmpeg()
+  const card = join(OUT, 'interstitial.mp4')
+  const tour = join(OUT, `${VIDEO.slug}-tour.mp4`)
+  const reel = join(OUT, `${VIDEO.slug}-reel.mp4`)
+  console.log('\nBuilding reel (title card + tour)')
+  if (!ff) { console.log('  (no H.264 ffmpeg found; the reel needs the MP4s)'); return }
+  const missing = [card, tour].filter((f) => !existsSync(f))
+  if (missing.length) { console.log('  missing: ' + missing.join(', ') + ' — record those first'); return }
+  // concat demuxer list: forward slashes, single quotes escaped the shell way
+  const list = join(OUT, 'reel-list.txt')
+  const entry = (f) => "file '" + f.replace(/\\/g, '/').replace(/'/g, "'\\''") + "'"
+  writeFileSync(list, [card, tour].map(entry).join('\n') + '\n')
+  const r = spawnSync(ff, ['-y', '-hide_banner', '-loglevel', 'error', '-f', 'concat', '-safe', '0', '-i', list, '-c', 'copy', '-movflags', '+faststart', reel],
+    { encoding: 'utf8', stdio: ['ignore', 'inherit', 'inherit'] })
+  if (r.status === 0) console.log(`  → ${reel}`)
+  else console.log('  ffmpeg concat failed with status', r.status)
+}
+
 function parseArgs(argv) {
   const out = {}
   for (let i = 0; i < argv.length; i++) {
@@ -544,4 +567,5 @@ try {
 } finally {
   await browser.close()
 }
+if (ONLY === 'all' || ONLY === 'reel') buildReel()
 console.log('\nDone.')
