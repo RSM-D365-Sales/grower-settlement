@@ -32,3 +32,6 @@ coverage/
 
 # Generated demo data (exported at deploy time by api/src/scripts/exportDemoData.ts)
 web/public/demo/
+
+# Rendered booth videos (regenerate with node demo-kit/record.mjs)
+demo-kit/out/

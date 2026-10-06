@@ -1,0 +1,15 @@
+{
+  "name": "grower-settlement-demo-kit",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Booth video recorder and presenter kit. Independent package like web/ and api/: run npm install inside demo-kit/.",
+  "scripts": {
+    "record": "node record.mjs",
+    "script": "node write-script.mjs",
+    "scratch-vo": "node scratch-vo.mjs"
+  },
+  "devDependencies": {
+    "playwright": "1.62.1"
+  }
+}

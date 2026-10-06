@@ -1,0 +1,432 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Grower Settlement Cheat Sheet</title>
+<!--
+  Presenter cheat sheet for the Bluestem Fresh Produce Grower Settlement demo (IFPA booth).
+  Self-contained: fonts and the RSM mark are local files in ./assets. Prints to two
+  Letter pages. Figures quoted here come from the demo seed (api/src/demo/seed.ts,
+  built 2026-10-06) and the settlement register (Settlement-data.xlsx →
+  api/src/demo/settlements.json). Receipt-side figures for a closed week do not change
+  when the data is rebuilt later; if the app shows something else, trust the screen.
+-->
+<style>
+  /* Layout: one reading column (~70ch) with a wide "click path" table that is the
+     working part of the page. Brand tokens from BRAND_GUIDE.md / web/src/theme.ts. */
+  @font-face { font-family: 'Poppins'; font-weight: 600; font-display: swap; src: url('assets/poppins-600.woff2') format('woff2'); }
+  @font-face { font-family: 'Poppins'; font-weight: 500; font-display: swap; src: url('assets/poppins-500.woff2') format('woff2'); }
+
+  :root {
+    color-scheme: light;
+    --bg: #FFFFFF;
+    --bg-2: #F2F3F4;            /* Fog */
+    --surface: #FFFFFF;
+    --ink: #00153D;             /* Midnight */
+    --ink-2: #33415C;
+    --muted: #5E6C86;
+    --line: #D8DEE8;
+    --accent: #009CDE;          /* RSM Blue */
+    --accent-ink: #00739F;      /* AA on white */
+    --sky: #E5F5FC;
+    --green: #3F9C35;
+    --amber: #B57E00;
+    --amber-bg: #FFF8E1;
+    --red: #D0342C;
+    --red-bg: #FDECEA;
+    --d365: #3A4FA8;
+    --d365-bg: #EEF0F9;
+    --logo-light: inline-block;
+    --logo-dark: none;
+    --font-display: 'Poppins', 'Segoe UI', system-ui, sans-serif;
+    --font-body: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    --font-mono: Consolas, 'Cascadia Mono', ui-monospace, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      color-scheme: dark;
+      --bg: #00153D; --bg-2: #0B2454; --surface: #0B2454; --ink: #FFFFFF; --ink-2: #DCE3EE; --muted: #9FB0CC;
+      --line: rgba(255,255,255,.14); --accent: #009CDE; --accent-ink: #4FC3F7; --sky: rgba(0,156,222,.16);
+      --green: #6FC265; --amber: #F2A900; --amber-bg: rgba(242,169,0,.14); --red: #FF7B72; --red-bg: rgba(208,52,44,.18);
+      --d365: #8FA0E8; --d365-bg: rgba(58,79,168,.25); --logo-light: none; --logo-dark: inline-block;
+    }
+  }
+  :root[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #00153D; --bg-2: #0B2454; --surface: #0B2454; --ink: #FFFFFF; --ink-2: #DCE3EE; --muted: #9FB0CC;
+    --line: rgba(255,255,255,.14); --accent: #009CDE; --accent-ink: #4FC3F7; --sky: rgba(0,156,222,.16);
+    --green: #6FC265; --amber: #F2A900; --amber-bg: rgba(242,169,0,.14); --red: #FF7B72; --red-bg: rgba(208,52,44,.18);
+    --d365: #8FA0E8; --d365-bg: rgba(58,79,168,.25); --logo-light: none; --logo-dark: inline-block;
+  }
+
+  * { box-sizing: border-box; }
+  html { font-size: 15px; }
+  body { margin: 0; background: var(--bg); color: var(--ink-2); font-family: var(--font-body); line-height: 1.5; padding-block: 0 48px; padding-inline: 20px; }
+  .page { max-width: 1040px; margin: 0 auto; display: grid; row-gap: 36px; }
+  h1, h2, h3 { font-family: var(--font-display); font-weight: 600; color: var(--ink); margin: 0; text-wrap: balance; letter-spacing: -.01em; }
+  h1 { font-size: 2rem; line-height: 1.15; }
+  h2 { font-size: 1.25rem; line-height: 1.25; display: flex; align-items: center; gap: 12px; }
+  h2::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  h3 { font-size: 1rem; }
+  p { margin: 0; max-width: 72ch; }
+  a { color: var(--accent-ink); }
+  code { font-family: var(--font-mono); font-size: .9em; background: var(--bg-2); padding: .05em .35em; border-radius: 4px; color: var(--ink); }
+  .eyebrow { font-size: .75rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  section { display: grid; row-gap: 16px; }
+
+  /* header */
+  header { border-bottom: 1px solid var(--line); padding-block: 28px 24px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 16px 32px; }
+  .lockup { display: flex; align-items: center; gap: 14px; }
+  .lockup svg { width: 44px; height: 44px; flex: none; }
+  .wordmark { font-family: var(--font-display); font-weight: 600; font-size: 1.7rem; line-height: 1; color: var(--accent); }
+  .wordmark .stem { color: var(--ink); }
+  .title { display: grid; row-gap: 4px; }
+  .rsm { display: flex; align-items: center; gap: 10px; color: var(--muted); font-size: .8rem; }
+  .rsm img { height: 22px; width: auto; display: var(--logo-light); }
+  .rsm img.dark { display: var(--logo-dark); }
+
+  /* at-a-glance grid */
+  .glance { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 12px; }
+  .glance div { background: var(--bg-2); border-radius: 10px; padding: 12px 14px; display: grid; row-gap: 2px; align-content: start; }
+  .glance .k { font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+  .glance .v { color: var(--ink); font-weight: 600; font-size: .95rem; line-height: 1.3; }
+  .glance .v small { display: block; font-weight: 400; color: var(--muted); font-size: .8rem; }
+
+  /* checklist */
+  .check { list-style: none; margin: 0; padding: 0; display: grid; row-gap: 10px; max-width: 80ch; }
+  .check li { position: relative; padding-left: 34px; }
+  .check li::before { content: ''; position: absolute; left: 0; top: 3px; width: 18px; height: 18px; border: 2px solid var(--accent); border-radius: 5px; box-sizing: border-box; }
+  .warn { border-left: 4px solid var(--amber); background: var(--amber-bg); padding: 10px 14px; border-radius: 0 8px 8px 0; max-width: 80ch; }
+  .warn b { color: var(--ink); }
+
+  /* click path */
+  .path { width: 100%; border-collapse: collapse; font-size: .92rem; }
+  .path th { text-align: left; font-size: .72rem; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); padding: 0 12px 10px; border-bottom: 1px solid var(--line); }
+  .path td { padding: 14px 12px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  .path tr:last-child td { border-bottom: 0; }
+  .path .n { font-family: var(--font-display); font-weight: 600; color: var(--accent-ink); font-variant-numeric: tabular-nums; width: 2.2rem; padding-right: 0; }
+  .path .where { width: 15rem; }
+  .path .where b { color: var(--ink); display: block; font-weight: 600; }
+  .path .where span { color: var(--muted); font-size: .85rem; }
+  .path ul { margin: 0; padding-left: 1.1rem; display: grid; row-gap: 3px; }
+  .path .say { border-left: 3px solid var(--accent); padding-left: 12px; color: var(--ink); font-style: italic; }
+  .pill { display: inline-block; font-size: .72rem; font-weight: 600; padding: 1px 8px; border-radius: 999px; line-height: 1.6; vertical-align: 1px; }
+  .pill.ok { background: rgba(63,156,53,.14); color: var(--green); }
+  .pill.warn { background: var(--amber-bg); color: var(--amber); }
+  .pill.bad { background: var(--red-bg); color: var(--red); }
+  .pill.d365 { background: var(--d365-bg); color: var(--d365); }
+  .table-wrap { overflow-x: auto; }
+  .vo td.t { white-space: nowrap; font-variant-numeric: tabular-nums; color: var(--muted); font-size: .85rem; }
+  .vo td.narr { font-size: 1rem; color: var(--ink); line-height: 1.45; }
+  .vo td.w { white-space: nowrap; color: var(--muted); font-size: .85rem; font-variant-numeric: tabular-nums; }
+  .vo .scene b { color: var(--ink); display: block; }
+  .vo .scene span { color: var(--muted); font-size: .85rem; }
+
+  /* cast / ids */
+  .cast { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px 36px; }
+  .cast dl { margin: 0; display: grid; grid-template-columns: max-content 1fr; column-gap: 14px; row-gap: 6px; font-size: .9rem; align-content: start; }
+  .cast dt { color: var(--muted); }
+  .cast dd { margin: 0; color: var(--ink); }
+  .cast dd code { font-size: .82em; }
+
+  /* Q&A */
+  .qa { display: grid; row-gap: 14px; max-width: 80ch; }
+  .qa div { display: grid; row-gap: 4px; }
+  .qa .q { font-weight: 600; color: var(--ink); }
+
+  /* loop */
+  .loop { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: .9rem; }
+  .loop span { background: var(--bg-2); border-radius: 8px; padding: 8px 12px; color: var(--ink); }
+  .loop span.card { background: var(--ink); color: var(--bg); }
+  .loop span span { background: none; padding: 0; color: inherit; }
+  .loop i { color: var(--muted); font-style: normal; }
+
+  footer { border-top: 1px solid var(--line); padding-top: 18px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: .82rem; color: var(--muted); }
+
+  @media (max-width: 720px) {
+    .path thead { display: none; }
+    .path tr { display: grid; grid-template-columns: 2.2rem 1fr; }
+    .path td { border-bottom: 0; padding: 6px 12px; }
+    .path td.n { grid-row: 1 / span 3; padding-top: 10px; }
+    .path tr { border-bottom: 1px solid var(--line); padding-block: 6px; }
+    .path .where { width: auto; }
+  }
+  @media print {
+    html { font-size: 11.5px; }
+    body { padding: 0; background: #fff; color: #222; }
+    .page { max-width: none; row-gap: 20px; }
+    header { padding-block: 8px 12px; }
+    section { break-inside: avoid; }
+    .path td { padding: 8px 10px; }
+    a { color: inherit; text-decoration: none; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<header>
+  <div class="lockup">
+    <svg viewBox="40 30 200 220" aria-hidden="true">
+      <path d="M62 232 Q75 150 150 130" stroke="#009CDE" stroke-width="26" stroke-linecap="round" fill="none"/>
+      <g transform="translate(155 108) rotate(-45)">
+        <path d="M-72 0 C-40 -50 40 -50 72 0 C40 50 -40 50 -72 0 Z" fill="#3F9C35"/>
+        <path d="M-45 0 L45 0" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round"/>
+      </g>
+    </svg>
+    <div class="title">
+      <div class="wordmark" aria-label="bluestem">blue<span class="stem">stem</span></div>
+      <h1>Grower Settlement · demo cheat sheet</h1>
+      <div class="eyebrow">Bluestem Fresh Produce · IFPA 2026 · Pay growers right, every pool, every pick.</div>
+    </div>
+  </div>
+  <div class="rsm"><span>Powered by</span><img src="assets/rsm-logo.png" alt="RSM"><img class="dark" src="assets/rsm-logo-white.png" alt=""></div>
+</header>
+
+<section>
+  <div class="glance">
+    <div><span class="k">Open</span><span class="v"><a href="https://grower-settlement.rsmd365.com">grower-settlement.rsmd365.com</a><small>No login. Lands on the Settlement dashboard.</small></span></div>
+    <div><span class="k">You are</span><span class="v">Demo User · Admin<small>That is what the ribbon shows. On camera you are Nora Adeyemi, Grower Relations.</small></span></div>
+    <div><span class="k">Where</span><span class="v">Bluestem Fresh Produce, company-wide<small>No site selector in this app. Fiscal weeks run Sunday to Saturday, FY2026.</small></span></div>
+    <div><span class="k">ERP</span><span class="v">Dynamics 365 F&amp;SC, mock mode<small>Booth build has no backend. Settlements ST0000xx come from a D365 grower-accounting export.</small></span></div>
+    <div><span class="k">Loop clip</span><span class="v"><span class="total-s">69</span> s tour + 12 s title card<small>demo-kit/out · captions burned in</small></span></div>
+  </div>
+</section>
+
+<section>
+  <h2>Before you walk up</h2>
+  <ul class="check">
+    <li>Open the Dashboard and press <b>Current period</b>. The week shown should be this week or last. Then pick <b>P40 · Sep 27 – Oct 3</b> in the period dropdown: <b>Product received should read 286.9K lb from 112 receipts</b> and the weekly settlement run should list 20 settlements, all Posted. If P40 is empty, the site was last deployed before that week; see "If something goes wrong".</li>
+    <li>Leave the dashboard on P40. The app remembers the last period you viewed in this browser, so every walkthrough starts where you left it.</li>
+    <li>Browser at 100% zoom, window at least 1280 px wide. If the sidebar is missing, someone collapsed it: the ☰ button at the top left brings it back.</li>
+    <li>Presenter note: every grower, customer, settlement and figure is Bluestem's demo set. Never describe it as a live tenant or as postings executed in an ERP.</li>
+  </ul>
+  <div class="warn"><b>Don't open Traceability or Administration,</b> and <b>don't press Email to grower (demo).</b> The first two are one-line placeholders for later phases. The email button downloads the PDF and shows a toast that says nothing was sent, which stops the story cold. Everything else is safe: nothing in this build writes anywhere. <b>Download PDF</b> saves a real statement file to the laptop, so use it once per conversation, not once per click. Inbound Gate scans live only until you leave the page.</div>
+</section>
+
+<section>
+  <h2>The story in thirty seconds</h2>
+  <p>Bluestem Fresh Produce packs and ships fruit and vegetables from twenty contract growers. Every grower has a flat-rate contract, a price per pound received, and eight of them also have a commission contract, where Bluestem sells the fruit and keeps a percentage. Trucks are read at the gate and weighed, each receipt carries its lot, contract and D365 purchase order, and each week closes on Saturday with one settlement per grower. For pooled crops the growers share the pool's sales, less packaging and repacking, less the advances Bluestem fronted them. The grower gets a statement; D365 gets the vendor invoice and the payment.</p>
+</section>
+
+<section>
+  <h2>Click path</h2>
+  <div class="table-wrap">
+  <table class="path">
+    <thead><tr><th></th><th>Go to</th><th>Point at</th><th>Say</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="n">1</td>
+        <td class="where"><b>Dashboard</b><span>Sidebar, first item. Period <i>P40 · Sep 27 – Oct 3</i></span></td>
+        <td><ul>
+          <li>Tiles: <b>Product received 286.9K lb · 112 receipts</b>, Product sold 176.6K lb, Collected $261,800, <b>Net grower payable $327,902 · 20 settlements · <span class="pill ok">Posted</span></b></li>
+          <li>Daily activity and Top products: blue is received, green is sold. Blueberries lead at 31.5K lb</li>
+          <li>Weekly settlement run, week ending Oct 3: one row per grower, $327,901.66 net</li>
+          <li>Previous / Next arrows step a week; <i>Current period</i> returns to this week, marked <span class="pill d365">In progress</span></li>
+        </ul></td>
+        <td class="say">One screen for the week: what came in, what sold, what we collected, and what we owe each grower. Last week is posted; this week is still filling in.</td>
+      </tr>
+      <tr>
+        <td class="n">2</td>
+        <td class="where"><b>Vendors</b>, then <b>Items</b><span>Type in the search box to filter either one</span></td>
+        <td><ul>
+          <li>20 growers, V-1001 Sunrise Berry Farms LLC to V-1020 Skagit Valley Produce, with payment terms</li>
+          <li>Contract badges per grower: Flat rate on all twenty, Commission on eight</li>
+          <li>23 items grouped by commodity, each lot tracked, with shelf life and storage temperature</li>
+        </ul></td>
+        <td class="say">Growers and items are D365 master data. We don't keep a second vendor list; the app reads the one finance already owns.</td>
+      </tr>
+      <tr>
+        <td class="n">3</td>
+        <td class="where"><b>Contracts</b><span>Search <i>Castillo</i>, then click <i>CT-2026-0002</i></span></td>
+        <td><ul>
+          <li>28 contracts for SEASON-2026</li>
+          <li>Castillo Family Growers has both kinds: CT-2026-0002 flat rate (Roma tomatoes $0.53/lb, romaine $1.00 each) and CT-2026-0003, 9.4% commission on the Tomatoes commodity</li>
+          <li>Detail page: the lines, then receipts against the contract for the last 30 days with lot and D365 PO</li>
+          <li>Status badge: <span class="pill ok">Enabled</span> or <span class="pill warn">Approved</span> (approved, not yet switched on)</li>
+        </ul></td>
+        <td class="say">Two ways to pay a grower. A fixed rate for what they deliver, or a commission: we sell it, keep our percentage, and the rest is theirs. One grower can have both.</td>
+      </tr>
+      <tr>
+        <td class="n">4</td>
+        <td class="where"><b>Inbound Gate</b><span>Press <i>Simulate truck RFID scan</i>, then <i>Capture departure &amp; weigh-out</i></span></td>
+        <td><ul>
+          <li>The ticket fills in: trailer, carrier and dock door, grower, contract, ship-from address, expected items with storage temperature</li>
+          <li>Scale readout goes from <span class="pill warn">MOTION</span> to <span class="pill ok">STABLE</span> with the gross weight</li>
+          <li>After departure: tare, net (gross minus tare) and time on site</li>
+          <li>The grower is random on each scan, so read the name off the screen</li>
+        </ul></td>
+        <td class="say">The truck rolls past the reader and the load is already on screen. Nobody keys a weight: gross on the way in, tare on the way out, and the net is what the grower gets paid on.</td>
+      </tr>
+      <tr>
+        <td class="n">5</td>
+        <td class="where"><b>Receiving</b>, then <b>Sales</b><span>Day-range dropdown on each: <i>Last 7 days</i></span></td>
+        <td><ul>
+          <li>Receipts: grower, item, quantity, lot <code>LOT-yyyymmdd-nnnn</code>, contract, D365 PO, <span class="pill ok">Posted</span> or <span class="pill warn">Open</span></li>
+          <li>Around fifteen receipts a day this time of year; today's are mostly still Open</li>
+          <li>Sales orders by customer with unit price and amount; Invoiced, Confirmed or Open</li>
+        </ul></td>
+        <td class="say">Receipts feed the flat-rate side. Invoiced sales feed the commission side. Only posted receipts and invoiced orders settle; open ones wait for next week.</td>
+      </tr>
+      <tr>
+        <td class="n">6</td>
+        <td class="where"><b>Settlement</b><span>Click <i>ST000078</i>, then the four tabs under Line details</span></td>
+        <td><ul>
+          <li>Register: 21 settlements, five of them <span class="pill d365">Pooled</span></li>
+          <li><b>ST000078 · Blueberries 082002</b>, pool POOL000000007, three growers: gross $459,000.00, premiums $1,500.00, deductions $10,050.00, advances $17,500.00, commissions $55,087.50, <b>net $377,862.50</b></li>
+          <li>Grower lines: each grower's share, Davis Growers at $100,200.00 net</li>
+          <li>Tabs: Receipts (9), Sales invoices (13), Premiums &amp; deductions (25: packaging, repacking, early delivery premium), Advances (3 up-front loans recovered in full)</li>
+        </ul></td>
+        <td class="say">This is the page growers argue about, so every number opens up. Three growers shared this blueberry pool. Here is what it sold for, what came off for packaging and repacking, the advance we already paid them, and what each one nets.</td>
+      </tr>
+      <tr>
+        <td class="n">7</td>
+        <td class="where"><b>Dashboard</b>, weekly settlement run<span>Click the <i>Castillo Family Growers</i> row. Hover <i>Download PDF</i></span></td>
+        <td><ul>
+          <li>Statement SET-20261003-V-1002, <span class="pill ok">Posted</span>, settle to Castillo Family Growers, Salinas CA, Net30</li>
+          <li>Summary: gross $32,756.49, commission −$2,412.77, <b>net grower return $30,343.72</b></li>
+          <li>CT-2026-0002 flat rate: 7 posted receipts, $7,088.59</li>
+          <li>CT-2026-0003 commission: 21 invoiced orders, $23,255.13 after 9.4%</li>
+        </ul></td>
+        <td class="say">And this is what the grower receives: one page for the week, both contracts, down to the item. Download it as a PDF or send it straight from here.</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+</section>
+
+<section>
+  <h2>Cast and identifiers</h2>
+  <div class="cast">
+    <dl>
+      <dt>You</dt><dd>Demo User, Admin (ribbon). Spoken persona: Nora Adeyemi, Grower Relations</dd>
+      <dt>Growers</dt><dd><code>V-1001</code> Sunrise Berry Farms LLC · <code>V-1002</code> Castillo Family Growers · <code>V-1008</code> Willamette Valley Berries · <code>V-1009</code> San Joaquin Stone Fruit Co. · sixteen more through <code>V-1020</code></dd>
+      <dt>Customers</dt><dd>Golden State Distributing · Pacific Fresh Markets · Cascade Food Wholesale · Emerald City Markets · Rocky Mountain Provisions <code>C-2001</code>–<code>C-2008</code></dd>
+      <dt>Pool growers</dt><dd><code>R1002</code> Davis Growers · <code>R1001</code> Farley Farms · <code>104</code> Best Supplier - Europe · <code>R1004</code> (no name on file)</dd>
+    </dl>
+    <dl>
+      <dt>Contracts</dt><dd><code>CT-2026-0001</code> to <code>CT-2026-0028</code>, season <code>SEASON-2026</code></dd>
+      <dt>Receipts and lots</dt><dd><code>RCT-10xxxx</code> · <code>LOT-yyyymmdd-nnnn</code> · D365 PO <code>PO-26xxxx</code></dd>
+      <dt>Sales orders</dt><dd><code>SO-30xxxx</code></dd>
+      <dt>Settlements</dt><dd>Register <code>ST0000nn</code> (D365 numbering), pools <code>POOL00000000n</code>, advances <code>ADV0000000nn</code> · weekly run <code>SET-yyyymmdd-V-nnnn</code> (week-ending date plus grower)</dd>
+      <dt>Roles</dt><dd>Admin · Accountant · ContractManager · ContractApprover · ReceivingClerk · Viewer</dd>
+    </dl>
+  </div>
+</section>
+
+<section>
+  <h2>Questions you will get</h2>
+  <div class="qa">
+    <div><span class="q">Is this actually talking to D365?</span><p>Not in the booth. This build has its demo data baked in and no backend behind it. The product is designed with Dynamics 365 F&amp;SC as the financial system of record: vendors and items are read from it, each receipt creates a D365 purchase order, and an approved settlement becomes a pending vendor invoice and a payment journal. The ST0000xx settlements are converted from a D365 grower-accounting export, which is why their numbers look like D365 numbers.</p></div>
+    <div><span class="q">Why not keep the contracts in D365 as purchase agreements?</span><p>Purchase agreements model a price and a quantity commitment. They cannot hold a commission percentage, a pool of growers, or the link from a sale back to the receipt it came from. So the app owns contracts, pools and the settlement calculation, and D365 stays the system of record for vendors, items, purchase orders, invoices and payments.</p></div>
+    <div><span class="q">How is a commission settlement worked out?</span><p>From the sales invoice back to the lots that were sold, back to the receipts and the grower's contract line. Net revenue less the company's commission is the grower's. In this build the match is by commodity or item, because the lot-level trace ledger is a later phase; the statement footnote says so.</p></div>
+    <div><span class="q">How does a pool split the money?</span><p>Net revenue is added up across every member's lots, then shared by each grower's contribution, by quantity received unless you configure it by value. ST000078 shows the result: three growers, one line each, with their own deductions and advances.</p></div>
+    <div><span class="q">How does the grower actually get paid?</span><p>On approval the settlement creates a pending vendor invoice in D365, one per grower, and payment runs through the standard vendor payment journal. Settled lines are flagged so they cannot be settled twice.</p></div>
+    <div><span class="q">Is the scale real?</span><p>On this screen the RFID reader and the truck scale are simulated. In production they sit behind a small agent at the receiving station, because a browser cannot talk to a scale directly. The screen and the gross, tare, net capture stay the same.</p></div>
+    <div><span class="q">Who is allowed to see settlements?</span><p>Accountant and Admin only. Roles come from Microsoft Entra ID and are checked on the server for every request, so hiding a menu item is never the control. A receiving clerk sees the gate and receipts and nothing about what a grower is paid.</p></div>
+    <div><span class="q">What if a posting to D365 fails?</span><p>By design every write to D365 goes through an outbox that records the attempt, the payload and the response, with a key that stops duplicates and a retry screen for admins. A receipt or a settlement is never lost quietly.</p></div>
+  </div>
+</section>
+
+<section>
+  <h2>If something goes wrong</h2>
+  <ul class="check">
+    <li><b>The dashboard shows a week with no activity.</b> Press Current period. If you stepped past the newest data the page says which dates the data covers.</li>
+    <li><b>P40 is empty, or the newest dates are weeks old.</b> The data is generated when the site is deployed and runs from January 1 to that day. When this sheet was written the hosted site's data ended on September 24. Ask Ryan to redeploy (any push to <code>main</code>, or Retry deployment in Cloudflare Pages); it takes a few minutes and brings the data up to that day. Until then, tell the same story on the newest full week the dashboard offers and read the figures off the screen.</li>
+    <li><b>The sidebar has gone.</b> Press ☰ at the top left. The setting sticks per browser.</li>
+    <li><b>You see a sign-in page or "API error".</b> You are on a different build. Use the hosted address at the top of this sheet.</li>
+    <li><b>Nothing loads at all.</b> Check the booth network, and fall back to the looping video while it reconnects.</li>
+  </ul>
+</section>
+
+<section id="voice-over">
+  <h2>Voice-over script</h2>
+  <!-- vo-script:start — generated by write-script.mjs from scenes.mjs; do not edit by hand -->
+  <p>1:09.0 running time, 143 words, read warm and unhurried at about 150 words a minute. Each line is sized to finish half a second before the cut; if you land early, hold the pause. Say "D365" as <i>dee-three-sixty-five</i>, and "RFID" and "PDF" letter by letter.</p>
+  <div class="table-wrap">
+  <table class="path vo">
+    <thead><tr><th></th><th>Time</th><th>Scene · on screen</th><th>Narration</th><th>Words</th></tr></thead>
+    <tbody>
+      <tr>
+        <td class="n">1</td>
+        <td class="t">0:00.0 – 0:09.0</td>
+        <td class="scene"><b>Settlement dashboard</b><span>KPI tiles for the current fiscal week, Previous period to the last posted week, then down to the weekly settlement run (one row per grower).</span></td>
+        <td class="narr">Bluestem pays every grower from one screen: what came in, what sold, and what each grower is owed this week.</td>
+        <td class="w">20 · 133 wpm</td>
+      </tr>
+      <tr>
+        <td class="n">2</td>
+        <td class="t">0:09.0 – 0:17.0</td>
+        <td class="scene"><b>Growers &amp; items</b><span>Vendors table with contract badges per grower, then the Items cards (commodity, lot tracked, shelf life, storage).</span></td>
+        <td class="narr">Growers and items come from D365, so contracts, receipts and settlements share one master.</td>
+        <td class="w">14 · 105 wpm</td>
+      </tr>
+      <tr>
+        <td class="n">3</td>
+        <td class="t">0:17.0 – 0:25.0</td>
+        <td class="scene"><b>Contracts</b><span>Contract register; search "Castillo" to show one grower with both a flat-rate and a commission contract; open CT-2026-0002 for its lines and the receipts against it.</span></td>
+        <td class="narr">Each contract sets the terms: a flat rate per pound, or a commission on what the fruit sells for.</td>
+        <td class="w">19 · 143 wpm</td>
+      </tr>
+      <tr>
+        <td class="n">4</td>
+        <td class="t">0:25.0 – 0:34.0</td>
+        <td class="scene"><b>Inbound Gate</b><span>Simulated RFID scan fills the gate ticket (grower, contract, ship-from, expected items) while the truck-scale readout settles from motion to stable.</span></td>
+        <td class="narr">At the gate, an RFID read pulls up the load: grower, contract and items. The scale captures the weight.</td>
+        <td class="w">19 · 127 wpm</td>
+      </tr>
+      <tr>
+        <td class="n">5</td>
+        <td class="t">0:34.0 – 0:43.0</td>
+        <td class="scene"><b>Receiving &amp; sales</b><span>Receiving table widened to the last 7 days (lot, contract, D365 PO, status), then the Sales orders table.</span></td>
+        <td class="narr">Every receipt carries its lot, contract and D365 purchase order. Invoiced sales feed the commission side.</td>
+        <td class="w">16 · 107 wpm</td>
+      </tr>
+      <tr>
+        <td class="n">6</td>
+        <td class="t">0:43.0 – 0:54.0</td>
+        <td class="scene"><b>Settlement</b><span>Settlement register; open pooled settlement ST000078 for the summary tiles and grower lines, then the Sales invoices, Premiums &amp; deductions and Advances tabs.</span></td>
+        <td class="narr">Settlement brings it together. Open a pool and every grower’s share is there: gross, premiums, deductions, advances, commission, and the net return.</td>
+        <td class="w">22 · 120 wpm</td>
+      </tr>
+      <tr>
+        <td class="n">7</td>
+        <td class="t">0:54.0 – 1:02.5</td>
+        <td class="scene"><b>Grower statement</b><span>From the weekly settlement run, open the Castillo Family Growers statement: settle-to block, fiscal period, net grower return, Download PDF, both contract sections.</span></td>
+        <td class="narr">Each grower gets a statement for the week, flat rate and commission on one page, ready to send as a PDF.</td>
+        <td class="w">21 · 148 wpm</td>
+      </tr>
+      <tr>
+        <td class="n">8</td>
+        <td class="t">1:02.5 – 1:09.0</td>
+        <td class="scene"><b>Grower Settlement</b><span>Midnight end card: bluestem mark, Grower Settlement, tagline, Powered by RSM bottom-right.</span></td>
+        <td class="narr">Grower Settlement, powered by RSM. Pay growers right, every pool, every pick.</td>
+        <td class="w">12 · 111 wpm</td>
+      </tr>
+    </tbody>
+  </table>
+  </div>
+  <p>Alternate openers if the room wants a hook (each adds about 5 s): “Here’s a problem every produce company knows by heart: the fruit is sold, and the grower is still waiting on a number.” · “Spreadsheets are where margins go to hide. Let’s go find them.”</p>
+  <!-- vo-script:end -->
+</section>
+
+<section>
+  <h2>Looping video</h2>
+  <div class="loop">
+    <span class="card">Title card · 12 s</span><i>→</i>
+    <span>Grower Settlement tour · <span class="total-s">69</span> s</span><i>→</i>
+    <span class="card">Title card · 12 s</span><i>→</i>
+    <span>next Bluestem app …</span>
+  </div>
+  <p>The tour is captioned bottom-left so it works muted. The voice-over script with timecodes is in <code>demo-kit/voiceover-script.md</code>; rendered files are in <code>demo-kit/out/</code>. To re-render after a data change: export the demo data, build the app, serve it, then <code>node demo-kit/record.mjs</code>. The steps are in <code>demo-kit/README.md</code>.</p>
+</section>
+
+<footer>
+  <span>Figures from <code>api/src/demo/seed.ts</code> (built 2026-10-06) and <code>Settlement-data.xlsx</code>.</span>
+  <span>Grower Settlement · Bluestem Fresh Produce edition</span>
+</footer>
+
+</div>
+</body>
+</html>
