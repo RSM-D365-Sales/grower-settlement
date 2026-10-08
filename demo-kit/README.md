@@ -16,7 +16,7 @@ map are the parts specific to this app.
 | `cheat-sheet.html` | Presenter cheat sheet source: click path, what to say, cast, Q&A, resets, plus the voice-over script (injected from `scenes.mjs`). |
 | `grower-settlement-cheat-sheet.html` | **Generated.** The same sheet as one self-contained file (fonts and logos inlined). This is the one to share with the team. |
 | `assets/` | Poppins woff2 and the RSM marks so the HTML pages work offline. |
-| `out/` | Rendered videos, timing JSON and the scratch VO (git-ignored). `grower-settlement-reel.mp4` (title card + tour, 1:21) is the file for the booth loop. |
+| `out/` | Rendered videos, timing JSON and the scratch VO (git-ignored). `grower-settlement-reel.mp4` (title card + tour with each scene's VO line burned in as a subtitle, 1:21) is the file for the booth loop. |
 
 This folder is its own npm package (like `web/` and `api/`): run `npm install`
 here once to get Playwright. It pins the Playwright version whose Chromium is
@@ -42,7 +42,8 @@ npx vite preview --port 5198 --strictPort      # leave running
 # 3. record (new terminal, from the repo root)
 node demo-kit/record.mjs                        # tour + title card + reel → demo-kit/out/
 node demo-kit/record.mjs --only tour --no-captions
-node demo-kit/record.mjs --only reel            # re-join the two MP4s after a re-record
+node demo-kit/record.mjs --only reel            # re-burn the VO subtitles and re-join (no app needed)
+node demo-kit/record.mjs --only reel --no-subtitles   # reel without the burned-in transcript
 node demo-kit/write-script.mjs                  # voiceover-script.md + cheat sheets
 node demo-kit/scratch-vo.mjs                    # optional: TTS pacing check
 ```

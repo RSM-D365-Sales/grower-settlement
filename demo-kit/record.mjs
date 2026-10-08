@@ -4,8 +4,9 @@
  *   node demo-kit/record.mjs                       # tour + interstitial
  *   node demo-kit/record.mjs --only tour           # just the app tour
  *   node demo-kit/record.mjs --only interstitial   # just the title card
- *   node demo-kit/record.mjs --only reel           # re-join the two MP4s into the reel
+ *   node demo-kit/record.mjs --only reel           # re-burn subtitles and re-join the reel (no app needed)
  *   node demo-kit/record.mjs --base http://localhost:5198 --no-captions
+ *   node demo-kit/record.mjs --only reel --no-subtitles   # reel without the burned-in VO transcript
  *
  * The app must be running at --base (default http://localhost:5198) as a
  * production build in static data mode — see demo-kit/README.md.
@@ -13,7 +14,8 @@
  * Output (demo-kit/out/):
  *   grower-settlement-tour.webm / .mp4   the tour (length = sum of scenes.mjs seconds), 1920×1080
  *   interstitial.webm / .mp4             the 12 s title card between clips
- *   grower-settlement-reel.mp4           title card + tour, back to back: the file for the booth loop
+ *   grower-settlement-tour-subtitled.mp4 the tour with each scene's VO line burned in (muted loop)
+ *   grower-settlement-reel.mp4           title card + subtitled tour, back to back: the file for the booth loop
  *   tour-timings.json                    measured scene boundaries (for VO alignment)
  *
  * MP4 (H.264) needs an ffmpeg with libx264. The script looks for, in order:
@@ -39,6 +41,7 @@ const args = parseArgs(process.argv.slice(2))
 const BASE = (args.base ?? 'http://localhost:5198').replace(/\/$/, '')
 const OUT = resolve(args.out ?? join(here, 'out'))
 const CAPTIONS = !args['no-captions']
+const SUBTITLES = !args['no-subtitles']
 const ONLY = args.only ?? 'all'
 const { width: W, height: H } = VIDEO.frame
 
@@ -526,17 +529,104 @@ function toMp4(webm, mp4, leadIn, duration) {
   else console.log('  ffmpeg failed with status', r.status)
 }
 
+// ---------------------------------------------------------------------------
+// Burned-in transcript. The booth loop plays muted, so each scene's VO line is
+// shown as a subtitle above the lower-third for the length of the scene. Lines
+// are rendered as transparent PNGs in Chromium (brand fonts, no libass needed)
+// and overlaid on the tour MP4 with ffmpeg.
+// ---------------------------------------------------------------------------
+const SUB_FADE = 0.3
+// Scenes whose picture already says the line (the end card) get no subtitle.
+const SUB_SKIP = new Set(['end-card'])
+
+function subtitleHtml(text, poppins) {
+  return `<!doctype html><meta charset="utf-8"><style>
+    @font-face{font-family:Poppins;font-weight:600;src:url(${poppins}) format('woff2')}
+    html,body{margin:0;background:transparent}
+    body{width:${W}px;height:${H}px;position:relative;font-family:'Segoe UI',system-ui,sans-serif}
+    .sub{position:absolute;left:232px;right:0;bottom:132px;display:flex;justify-content:center}
+    .box{max-width:1280px;background:rgba(0,21,61,.9);color:#fff;border-radius:10px;padding:14px 30px 16px;
+      font-size:33px;line-height:1.38;font-weight:600;text-align:center;letter-spacing:.003em;
+      box-shadow:0 10px 30px rgba(0,21,61,.35);border-top:4px solid #009CDE}
+  </style><div class="sub"><div class="box"></div></div>
+  <script>document.querySelector('.box').textContent = ${JSON.stringify(text)}</script>`
+}
+
+/** Scene windows on the tour timeline: measured boundaries if the last take
+ *  wrote them, otherwise the scenes.mjs budgets. */
+function sceneWindows() {
+  const f = join(OUT, 'tour-timings.json')
+  const measured = existsSync(f) ? JSON.parse(readFileSync(f, 'utf8')).scenes : null
+  let t = 0
+  return SCENES.map((s) => {
+    const m = measured?.find((x) => x.id === s.id)
+    const w = m ? { start: m.start, end: m.end } : { start: t, end: t + s.seconds }
+    t += s.seconds
+    return { ...w, scene: s }
+  })
+}
+
+async function burnSubtitles(browser, tour, out) {
+  const ff = findFfmpeg()
+  const dir = join(OUT, 'subtitles')
+  mkdirSync(dir, { recursive: true })
+  const poppinsFile = ['Poppins-SemiBold.woff2', 'poppins-600.woff2', 'Poppins-600.woff2']
+    .map((n) => join(here, 'assets', n)).find(existsSync)
+  const poppins = poppinsFile ? 'data:font/woff2;base64,' + readFileSync(poppinsFile).toString('base64') : ''
+
+  const page = await browser.newPage({ viewport: { width: W, height: H }, deviceScaleFactor: 1 })
+  const cues = []
+  for (const w of sceneWindows()) {
+    if (SUB_SKIP.has(w.scene.id)) continue
+    const png = join(dir, `${w.scene.id}.png`)
+    await page.setContent(subtitleHtml(w.scene.vo, poppins), { waitUntil: 'load' })
+    await page.evaluate(() => document.fonts.ready)
+    await page.screenshot({ path: png, omitBackground: true })
+    cues.push({ ...w, png })
+  }
+  await page.close()
+
+  // One looped PNG input per cue, faded in/out and shifted to its scene start.
+  const inputs = ['-i', tour]
+  const chains = []
+  let last = '0:v'
+  cues.forEach((c, i) => {
+    const dur = (c.end - c.start).toFixed(3)
+    inputs.push('-loop', '1', '-framerate', '30', '-t', dur, '-i', c.png)
+    const n = i + 1
+    chains.push(`[${n}:v]format=rgba,fade=in:st=0:d=${SUB_FADE}:alpha=1,fade=out:st=${(c.end - c.start - SUB_FADE).toFixed(3)}:d=${SUB_FADE}:alpha=1,setpts=PTS+${c.start.toFixed(3)}/TB[s${n}]`)
+    chains.push(`[${last}][s${n}]overlay=0:0:eof_action=pass[v${n}]`)
+    last = `v${n}`
+  })
+  // Same encode settings as toMp4 so the reel join stays a stream copy.
+  const argv = ['-y', '-hide_banner', '-loglevel', 'error', ...inputs,
+    '-filter_complex', chains.join(';'), '-map', `[${last}]`,
+    '-r', '30', '-c:v', 'libx264', '-preset', 'slow', '-crf', '18', '-pix_fmt', 'yuv420p',
+    '-movflags', '+faststart', '-an', out]
+  const r = spawnSync(ff, argv, { encoding: 'utf8', stdio: ['ignore', 'inherit', 'inherit'] })
+  if (r.status !== 0) { console.log('  ffmpeg subtitle burn failed with status', r.status); return false }
+  console.log(`  → ${out}  (${cues.length} subtitles)`)
+  for (const c of cues) console.log(`     ${c.start.toFixed(2).padStart(6)}–${c.end.toFixed(2).padEnd(6)} ${c.scene.vo}`)
+  return true
+}
+
 /** Title card followed by the tour, as one file for the booth loop. Both MP4s
- *  come out of toMp4 with identical encoding, so the join is a stream copy. */
-function buildReel() {
+ *  come out of toMp4 with identical encoding, so the join is a stream copy.
+ *  Unless --no-subtitles, the tour is first given the burned-in transcript. */
+async function buildReel(browser) {
   const ff = findFfmpeg()
   const card = join(OUT, 'interstitial.mp4')
-  const tour = join(OUT, `${VIDEO.slug}-tour.mp4`)
+  let tour = join(OUT, `${VIDEO.slug}-tour.mp4`)
   const reel = join(OUT, `${VIDEO.slug}-reel.mp4`)
   console.log('\nBuilding reel (title card + tour)')
   if (!ff) { console.log('  (no H.264 ffmpeg found; the reel needs the MP4s)'); return }
   const missing = [card, tour].filter((f) => !existsSync(f))
   if (missing.length) { console.log('  missing: ' + missing.join(', ') + ' — record those first'); return }
+  if (SUBTITLES) {
+    const subbed = join(OUT, `${VIDEO.slug}-tour-subtitled.mp4`)
+    if (!(await burnSubtitles(browser, tour, subbed))) return
+    tour = subbed
+  }
   // concat demuxer list: forward slashes, single quotes escaped the shell way
   const list = join(OUT, 'reel-list.txt')
   const entry = (f) => "file '" + f.replace(/\\/g, '/').replace(/'/g, "'\\''") + "'"
@@ -564,8 +654,8 @@ const browser = await chromium.launch({ channel: 'chromium' })
 try {
   if (ONLY === 'all' || ONLY === 'tour') await recordTour(browser)
   if (ONLY === 'all' || ONLY === 'interstitial') await recordInterstitial(browser)
+  if (ONLY === 'all' || ONLY === 'reel') await buildReel(browser)
 } finally {
   await browser.close()
 }
-if (ONLY === 'all' || ONLY === 'reel') buildReel()
 console.log('\nDone.')
